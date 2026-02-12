@@ -214,7 +214,7 @@ export default function SupermercadoDetalleView({
         </div>
       </section>
 
-      <div className="fixed bottom-0 left-1/2 z-10 w-full max-w-[390px] -translate-x-1/2 bg-[#E9EDE9] px-4 pb-4 pt-2">
+      <div className="fixed inset-x-0 bottom-0 z-10 w-full bg-[#E9EDE9] px-4 pb-4 pt-2">
         <Link
           href={backHref}
           className="flex h-11 w-full items-center justify-center rounded-[12px] border border-[#8A9BA7] bg-white text-[14px] leading-none font-normal text-[#0D3233] shadow-[0_2px_8px_0_#0D32330F]"
@@ -225,3 +225,4 @@ export default function SupermercadoDetalleView({
     </div>
   );
 }
+
