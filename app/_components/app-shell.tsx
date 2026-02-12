@@ -52,8 +52,8 @@ export default function AppShell({
   const isHome = pathname === "/home";
 
   return (
-    <main className="flex min-h-svh items-center justify-center bg-[#E9EDE9] md:p-6">
-      <section className="relative flex min-h-svh w-full max-w-[390px] flex-col bg-[#E9EDE9] p-4 md:min-h-[844px]">
+    <main className="flex min-h-dvh items-center justify-center bg-[#E9EDE9] md:p-6">
+      <section className="relative flex min-h-dvh w-full max-w-[390px] flex-col bg-[#E9EDE9] p-4 md:min-h-0 md:rounded-[16px]">
         <header className="flex h-[56px] w-full items-center justify-between rounded-[12px] bg-[#DDE2DD] px-3 py-2">
           <div className="flex items-center gap-2">
             {isHome ? (
@@ -93,7 +93,7 @@ export default function AppShell({
           </button>
         </header>
 
-        <div className={contentClassName ?? "flex h-full w-full flex-col gap-4 pt-4"}>
+        <div className={contentClassName ?? "flex min-h-0 flex-1 w-full flex-col gap-4 pt-4"}>
           {children}
         </div>
 

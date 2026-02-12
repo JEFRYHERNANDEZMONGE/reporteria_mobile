@@ -81,7 +81,7 @@ export default async function MiPerfilPage() {
       displayName={menuDisplayName}
       profilePhotoUrl={profilePhotoUrl}
       onLogout={logoutAction}
-      contentClassName="flex h-full w-full flex-col gap-4 pt-4"
+      contentClassName="flex min-h-0 flex-1 w-full flex-col gap-4 pt-4"
     >
       <ProfileForm
         initialName={profileName}

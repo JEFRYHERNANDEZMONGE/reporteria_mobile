@@ -108,7 +108,7 @@ export default function ZonaMapaView({
   }, [router, startState.success]);
 
   return (
-    <div className="flex h-full w-full flex-col gap-5 pt-1">
+    <div className="flex min-h-0 w-full flex-1 flex-col gap-4 overflow-y-auto pt-1">
       <div className="rounded-[12px] border border-[#B3B5B3] bg-white px-3 py-2">
         <p className="m-0 text-[14px] leading-none font-normal text-[#0D3233]">{routeName}</p>
         {lapso ? (
@@ -132,7 +132,7 @@ export default function ZonaMapaView({
         />
       ) : null}
 
-      <div className="flex h-[420px] w-full items-center justify-center overflow-hidden rounded-[12px] border border-[#B3B5B3] bg-white">
+      <div className="flex h-[clamp(180px,42dvh,420px)] w-full items-center justify-center overflow-hidden rounded-[12px] border border-[#B3B5B3] bg-white">
         {!apiKey ? (
           <p className="px-4 text-center text-[13px] text-[#405C62]">
             Agrega NEXT_PUBLIC_GOOGLE_MAPS_API_KEY en tu .env.local para activar Google Maps.
@@ -146,7 +146,7 @@ export default function ZonaMapaView({
         )}
       </div>
 
-      <div className="flex w-full flex-col gap-5 pt-[10px]">
+      <div className="flex w-full flex-col gap-4 pt-2 pb-2">
         {!hasActiveLapso && canStartRoute ? (
           <form action={startAction} className="flex w-full flex-col gap-2">
             <input type="hidden" name="routeId" value={routeId} />

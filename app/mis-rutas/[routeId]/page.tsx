@@ -173,7 +173,7 @@ export default async function ZonaMapaPage({
       displayName={getDisplayName(user)}
       profilePhotoUrl={profilePhotoUrl}
       onLogout={logoutAction}
-      contentClassName="flex h-full w-full flex-col gap-4 pt-4"
+      contentClassName="flex min-h-0 flex-1 w-full flex-col gap-4 pt-4"
     >
       <ZonaMapaView
         routeId={routeIdNumber}
