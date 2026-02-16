@@ -614,6 +614,11 @@ export default function RegistroForm({
         const formData = new FormData(event.currentTarget);
         // Remove heavy files
         formData.delete("evidenceFiles");
+        // Remove geos (we don't need them for record creation if manual mode checks manualEvidenceCount)
+        // Actually, if we keep them, parseEvidencePayload might fail because file length is 0.
+        // So let's delete them.
+        formData.delete("evidenceGeoJson");
+        formData.append("manualEvidenceCount", String(newEvidenceFiles.length ?? 0));
         
         // Validation reused logic
         const existingCount = existingEvidenceUrls.length;

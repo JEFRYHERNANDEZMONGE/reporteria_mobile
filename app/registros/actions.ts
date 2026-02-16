@@ -409,6 +409,7 @@ export async function uploadSingleEvidenceAction(
   }
 }
 
+
 export async function createRegistroAction(
   _prevState: RegistroActionState,
   formData: FormData,
@@ -419,27 +420,39 @@ export async function createRegistroAction(
   const systemInventory = parseOptionalNonNegativeNumber(formData.get("systemInventory"));
   const realInventory = parseOptionalNonNegativeNumber(formData.get("realInventory"));
   const comments = String(formData.get("comments") ?? "").trim();
+  const manualEvidenceCount = parseOptionalNonNegativeNumber(formData.get("manualEvidenceCount"));
   const evidencePayload = parseEvidencePayload(formData);
 
   if (!Number.isFinite(routeId) || !Number.isFinite(establishmentId) || !Number.isFinite(productId)) {
     return { ...INITIAL_REGISTRO_STATE, error: "Debes seleccionar ruta, establecimiento y producto." };
   }
 
-  if (
-    Number.isNaN(systemInventory) ||
-    Number.isNaN(realInventory) ||
-    evidencePayload === null
-  ) {
+  if (Number.isNaN(systemInventory)) {
+    return { ...INITIAL_REGISTRO_STATE, error: "El inventario sistema no es válido." };
+  }
+
+  if (Number.isNaN(realInventory)) {
+    return { ...INITIAL_REGISTRO_STATE, error: "El inventario real no es válido." };
+  }
+
+  const isManualMode = manualEvidenceCount !== null && manualEvidenceCount > 0;
+
+  if (!isManualMode && evidencePayload === null) {
     return {
       ...INITIAL_REGISTRO_STATE,
-      error: "Revisa inventarios, evidencias o geolocalizacion.",
+      error: "Error en las evidencias o geolocalización.",
     };
   }
 
-  if (evidencePayload.files.length < 1 || evidencePayload.files.length > MAX_EVIDENCE_PER_RECORD) {
+  // Count files: if manual, we trust the param, otherwise we take the payload count
+  const finalEvidenceCount = isManualMode 
+     ? manualEvidenceCount 
+     : evidencePayload!.files.length;
+
+  if (finalEvidenceCount < 1 || finalEvidenceCount > MAX_EVIDENCE_PER_RECORD) {
     return {
       ...INITIAL_REGISTRO_STATE,
-      error: "Debes adjuntar entre 1 y 6 evidencias.",
+      error: `Debes adjuntar entre 1 y ${MAX_EVIDENCE_PER_RECORD} evidencias.`,
     };
   }
 
@@ -472,7 +485,7 @@ export async function createRegistroAction(
       product_id: productId,
       system_inventory: systemInventory,
       real_inventory: realInventory,
-      evidence_num: evidencePayload.files.length,
+      evidence_num: finalEvidenceCount,
       comments: comments || null,
       time_date: new Date().toISOString(),
     })
@@ -483,20 +496,23 @@ export async function createRegistroAction(
     return { ...INITIAL_REGISTRO_STATE, error: "No se pudo crear el registro." };
   }
 
-  const uploadResult = await uploadEvidenceRows({
-    auth,
-    recordId: insertedRecord.record_id,
-    files: evidencePayload.files,
-    geos: evidencePayload.geos,
-  });
+  // Only upload here if NOT manual mode
+  if (!isManualMode && evidencePayload && evidencePayload.files.length > 0) {
+    const uploadResult = await uploadEvidenceRows({
+        auth,
+        recordId: insertedRecord.record_id,
+        files: evidencePayload.files,
+        geos: evidencePayload.geos,
+    });
 
-  if (uploadResult.error) {
-    await auth.supabase
-      .from("check_record")
-      .delete()
-      .eq("record_id", insertedRecord.record_id);
+    if (uploadResult.error) {
+        await auth.supabase
+        .from("check_record")
+        .delete()
+        .eq("record_id", insertedRecord.record_id);
 
-    return { ...INITIAL_REGISTRO_STATE, error: uploadResult.error };
+        return { ...INITIAL_REGISTRO_STATE, error: uploadResult.error };
+    }
   }
 
   revalidateRegistroRelatedPaths(routeId, establishmentId);
@@ -509,6 +525,7 @@ export async function createRegistroAction(
   };
 }
 
+
 export async function updateRegistroAction(
   _prevState: RegistroActionState,
   formData: FormData,
@@ -517,20 +534,27 @@ export async function updateRegistroAction(
   const systemInventory = parseOptionalNonNegativeNumber(formData.get("systemInventory"));
   const realInventory = parseOptionalNonNegativeNumber(formData.get("realInventory"));
   const comments = String(formData.get("comments") ?? "").trim();
+  const manualEvidenceCount = parseOptionalNonNegativeNumber(formData.get("manualEvidenceCount"));
   const evidencePayload = parseEvidencePayload(formData);
 
   if (!Number.isFinite(recordId)) {
     return { ...INITIAL_REGISTRO_STATE, error: "Registro invalido." };
   }
 
-  if (
-    Number.isNaN(systemInventory) ||
-    Number.isNaN(realInventory) ||
-    evidencePayload === null
-  ) {
+  if (Number.isNaN(systemInventory)) {
+    return { ...INITIAL_REGISTRO_STATE, error: "El inventario sistema no es válido." };
+  }
+
+  if (Number.isNaN(realInventory)) {
+    return { ...INITIAL_REGISTRO_STATE, error: "El inventario real no es válido." };
+  }
+
+  const isManualMode = manualEvidenceCount !== null && manualEvidenceCount >= 0;
+
+  if (!isManualMode && evidencePayload === null) {
     return {
       ...INITIAL_REGISTRO_STATE,
-      error: "Revisa inventarios, evidencias o geolocalizacion.",
+      error: "Error en las evidencias o geolocalización.",
     };
   }
 
@@ -595,19 +619,25 @@ export async function updateRegistroAction(
     .eq("record_id", recordId);
 
   const evidenceRows = (existingEvidenceRows ?? []) as ExistingEvidenceRow[];
-  const removableIds = evidencePayload.removeEvidenceIds.filter((id) =>
-    evidenceRows.some((row) => row.evidence_id === id),
-  );
+  
+  const removableIds = evidencePayload 
+    ? evidencePayload.removeEvidenceIds.filter((id) =>
+        evidenceRows.some((row) => row.evidence_id === id))
+    : parseRemoveEvidenceIds(String(formData.get("removeEvidenceIdsJson") ?? "[]"));
 
-  if (evidencePayload.files.length > MAX_EVIDENCE_PER_RECORD) {
+  const newFilesCount = isManualMode 
+      ? manualEvidenceCount! // if isManualMode, manualEvidenceCount is checked >= 0
+      : evidencePayload!.files.length;
+
+  if (newFilesCount > MAX_EVIDENCE_PER_RECORD) {
     return {
       ...INITIAL_REGISTRO_STATE,
-      error: "No puedes subir mas de 6 evidencias.",
+      error: "No puedes subir mas de 6 evidencias nuevas.",
     };
   }
 
   const resultingEvidenceCount =
-    evidenceRows.length - removableIds.length + evidencePayload.files.length;
+    evidenceRows.length - removableIds.length + newFilesCount;
 
   if (
     resultingEvidenceCount < 1 ||
@@ -615,7 +645,7 @@ export async function updateRegistroAction(
   ) {
     return {
       ...INITIAL_REGISTRO_STATE,
-      error: "El registro debe conservar entre 1 y 6 evidencias.",
+      error: `El registro debe conservar entre 1 y ${MAX_EVIDENCE_PER_RECORD} evidencias.`,
     };
   }
 
@@ -635,17 +665,21 @@ export async function updateRegistroAction(
     return { ...INITIAL_REGISTRO_STATE, error: "No se pudo actualizar el registro." };
   }
 
+  // Handle deletions first
   await deleteEvidenceRows(auth, recordId, removableIds, evidenceRows);
 
-  const uploadResult = await uploadEvidenceRows({
-    auth,
-    recordId,
-    files: evidencePayload.files,
-    geos: evidencePayload.geos,
-  });
+  // Upload new files if NOT manual mode
+  if (!isManualMode && evidencePayload && evidencePayload.files.length > 0) {
+    const uploadResult = await uploadEvidenceRows({
+        auth,
+        recordId,
+        files: evidencePayload.files,
+        geos: evidencePayload.geos,
+    });
 
-  if (uploadResult.error) {
-    return { ...INITIAL_REGISTRO_STATE, error: uploadResult.error };
+    if (uploadResult.error) {
+        return { ...INITIAL_REGISTRO_STATE, error: uploadResult.error };
+    }
   }
 
   revalidateRegistroRelatedPaths(establishment.route_id, recordRow.establishment_id);
