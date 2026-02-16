@@ -390,7 +390,7 @@ export default function RegistroForm({
 
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col">
-      <form action={formAction} className="min-h-0 flex-1 overflow-y-auto pb-[calc(2rem+env(safe-area-inset-bottom))] pt-1">
+      <form action={formAction} className="min-h-0 flex-1 overflow-y-auto pb-24 pt-1">
         {recordId ? <input type="hidden" name="recordId" value={recordId} /> : null}
         <input type="hidden" name="source" value={source} />
         <input type="hidden" name="routeId" value={effectiveRouteId ?? ""} />
