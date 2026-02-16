@@ -600,55 +600,6 @@ export default function RegistroForm({
     evidenceInputRef.current?.click();
   }
 
-
-    evidenceInputRef.current?.click();
-  }
-
-  async function handleControlledSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (pending) return;
-
-    // 1. Basic Validation
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-
-    // Remove file inputs from main submission to avoid payload limits
-    formData.delete("evidenceFiles");
-
-    // Manually check if we have enough total evidence (existing + new)
-    const existingCount = existingEvidenceUrls.length;
-    const newCount = newEvidenceFiles.length;
-    const totalCount = existingCount + newCount;
-
-    if (totalCount < 1 || totalCount > 6) {
-      setClientError("Debes tener entre 1 y 6 evidencias en total.");
-      return;
-    }
-
-    // 2. Submit initial record creation/update without files
-    let result: RegistroActionState;
-    
-    // We need to wrap formAction to be used here or call the action directly
-    // Since we are inside a client component, we can call the server action directly
-    const actionToCall = mode === "create" ? createRegistroAction : updateRegistroAction;
-    
-    try {
-      // Trigger a transition-like state if needed, but since we have "pending" from useActionState...
-      // Actually useActionState is tied to the form submission. 
-      // We can't easily hijack it with manual calls while maintaining the hook's state.
-      // So we will use startTransition or just async/await and manage a local loading state if needed.
-      // For now, let's just await the action.
-      
-      // Note: We need to set a "submitting" state because useActionState won't trigger automatically here.
-      // But we can't write to "pending". We'll use a local state or toast.
-      // better: use a second loading state.
-    } catch (e) {
-      console.error(e);
-      setClientError("Error al iniciar el envío.");
-      return;
-    }
-  }
-
   // We need a local loading state since we are bypassing the form action for the multi-step process
   const [isSubmitting, setIsSubmitting] = useState(false);
 
