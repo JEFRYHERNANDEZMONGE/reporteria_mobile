@@ -174,7 +174,7 @@ export default function SupermercadoDetalleView({
     <div className="relative flex h-full min-h-0 w-full flex-col">
       <section className="min-h-0 flex-1 overflow-y-auto pb-20 pt-1">
         <div className="rounded-[12px] border border-[#B3B5B3] bg-[#E9EDE9] p-3">
-          <p className="m-0 text-[12px] leading-none font-normal text-[#5A7984]">Supermercado</p>
+          <p className="m-0 text-[12px] leading-none font-normal text-[#5A7984]">Establecimiento</p>
           <p className="mt-1 text-[16px] leading-none font-normal text-[#0D3233]">{establishmentName}</p>
         </div>
 

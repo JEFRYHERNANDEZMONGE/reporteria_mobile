@@ -100,7 +100,7 @@ export default function AppShell({
         </div>
 
         {menuOpen ? (
-          <div className="absolute inset-0 z-20 bg-[#00000033]">
+          <div className="absolute inset-0 z-20 bg-transparent">
             <button
               type="button"
               aria-label="Cerrar menu"

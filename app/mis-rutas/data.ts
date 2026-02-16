@@ -93,7 +93,7 @@ export async function getMisRutasPage({
       id: route.route_id,
       name: route.nombre,
       supermarketsLabel:
-        typeof total === "number" ? `${total} supermercados` : "Ruta asignada",
+        typeof total === "number" ? `${total} establecimientos` : "Ruta asignada",
       activeLapsoId: activeLapso?.lapsoId ?? null,
       lapsoLabel: activeLapso
         ? `${activeLapso.dayLabel} (${activeLapso.percent}%)`

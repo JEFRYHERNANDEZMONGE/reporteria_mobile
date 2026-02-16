@@ -35,7 +35,7 @@ export default function SupermercadoDetalleModal({
       : "No hay productos pendientes para registrar.";
 
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/80 p-4">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-transparent p-4">
       <div className="w-full rounded-[12px] border border-[#B3B5B3] bg-[#E9EDE9] p-4">
         <div className="rounded-[12px] bg-[#DDE2DD] px-3 py-3">
           <p className="m-0 text-[20px] leading-none font-normal text-[#0D3233]">{establishmentName}</p>

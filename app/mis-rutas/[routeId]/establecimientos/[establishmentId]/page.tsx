@@ -106,11 +106,11 @@ export default async function SupermercadoDetallePage({
 
   return (
     <AppShell
-      title="Supermercado detalle"
+      title="Establecimiento detalle"
       displayName={getDisplayName(user)}
       profilePhotoUrl={profilePhotoUrl}
       onLogout={logoutAction}
-      contentClassName="relative flex min-h-0 flex-1 w-full pt-4"
+      contentClassName="relative flex min-h-0 flex-1 h-full w-full pt-4"
     >
       <SupermercadoDetalleView
         routeId={routeIdNumber}
