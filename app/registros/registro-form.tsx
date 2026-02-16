@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { createRegistroAction, updateRegistroAction } from "./actions";
 import type {
   EstablishmentOption,
@@ -15,6 +16,124 @@ import type {
   RegistroSource,
   RouteOption,
 } from "./types";
+
+type ComboboxOption = {
+  value: string;
+  label: string;
+};
+
+type ComboboxProps = {
+  label: string;
+  value: string;
+  options: ComboboxOption[];
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
+};
+
+function Combobox({
+  label,
+  value,
+  options,
+  onChange,
+  disabled = false,
+  placeholder = "Seleccionar...",
+}: ComboboxProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+  const displayValue = selectedOption?.label ?? "";
+
+  const filteredOptions = useMemo(() => {
+    if (!searchTerm.trim()) return options;
+    const term = searchTerm.toLowerCase();
+    return options.filter((option) =>
+      option.label.toLowerCase().includes(term)
+    );
+  }, [options, searchTerm]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        setSearchTerm("");
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isOpen]);
+
+  function handleSelect(optionValue: string) {
+    onChange(optionValue);
+    setIsOpen(false);
+    setSearchTerm("");
+  }
+
+  return (
+    <label className="flex w-full flex-col gap-[6px]">
+      <span className="text-[12px] leading-none font-normal text-[#405C62]">{label}</span>
+      <div ref={containerRef} className="relative w-full">
+        <div className="relative">
+          <input
+            ref={inputRef}
+            type="text"
+            value={isOpen ? searchTerm : displayValue}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onFocus={() => {
+              if (!disabled) {
+                setIsOpen(true);
+                setSearchTerm("");
+              }
+            }}
+            onClick={() => {
+              if (!disabled) {
+                setIsOpen(true);
+              }
+            }}
+            placeholder={placeholder}
+            disabled={disabled}
+            className="h-11 w-full rounded-[12px] border border-[#B3B5B3] bg-white px-3 pr-10 text-[14px] text-[#0D3233] outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+          />
+          <ChevronDown
+            size={20}
+            className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#5A7984] transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+        </div>
+
+        {isOpen && !disabled && filteredOptions.length > 0 && (
+          <div className="absolute z-50 mt-1 w-full max-h-60 overflow-y-auto rounded-[12px] border border-[#B3B5B3] bg-white shadow-lg">
+            {filteredOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleSelect(option.value)}
+                className={`w-full px-3 py-2.5 text-left text-[14px] hover:bg-[#E9EDE9] ${
+                  option.value === value ? "bg-[#DDE2DD]" : ""
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {isOpen && !disabled && filteredOptions.length === 0 && (
+          <div className="absolute z-50 mt-1 w-full rounded-[12px] border border-[#B3B5B3] bg-white shadow-lg px-3 py-2.5">
+            <p className="m-0 text-[14px] text-[#8A9BA7]">No se encontraron resultados</p>
+          </div>
+        )}
+      </div>
+    </label>
+  );
+}
 
 type RegistroFormProps = {
   mode: "create" | "edit";
@@ -144,6 +263,28 @@ export default function RegistroForm({
     [availableProductIds, productOptions],
   );
 
+  const establishmentComboboxOptions = useMemo(
+    () => [
+      { value: "", label: "Seleccionar..." },
+      ...establishmentOptions.map((option) => ({
+        value: String(option.id),
+        label: buildEstablishmentLabel(option, routeById),
+      })),
+    ],
+    [establishmentOptions, routeById],
+  );
+
+  const productComboboxOptions = useMemo(
+    () => [
+      { value: "", label: "Seleccionar..." },
+      ...filteredProducts.map((option) => ({
+        value: String(option.id),
+        label: `${option.name} (${option.sku})`,
+      })),
+    ],
+    [filteredProducts],
+  );
+
   const effectiveProductId =
     selectedProductId !== null &&
     filteredProducts.some((option) => option.id === selectedProductId)
@@ -235,47 +376,31 @@ export default function RegistroForm({
         <input type="hidden" name="removeEvidenceIdsJson" value="[]" />
 
         <div className="flex w-full flex-col gap-3">
-          <label className="flex w-full flex-col gap-[6px]">
-            <span className="text-[12px] leading-none font-normal text-[#405C62]">Ubicacion</span>
-            <select
-              className="h-11 w-full rounded-[12px] border border-[#B3B5B3] bg-white px-3 text-[14px] text-[#0D3233] outline-none"
-              value={effectiveEstablishmentId ?? ""}
-              onChange={(event) => {
-                const establishmentId = toNullableNumber(event.target.value);
-                const establishment = establishmentOptions.find(
-                  (item) => item.id === establishmentId,
-                );
-                setSelectedEstablishmentId(establishmentId);
-                setSelectedRouteId(establishment?.routeId ?? null);
-                setSelectedProductId(null);
-              }}
-              disabled={mode === "edit"}
-            >
-              <option value="">Seleccionar...</option>
-              {establishmentOptions.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {buildEstablishmentLabel(option, routeById)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Combobox
+            label="Ubicacion"
+            value={String(effectiveEstablishmentId ?? "")}
+            options={establishmentComboboxOptions}
+            onChange={(value) => {
+              const establishmentId = toNullableNumber(value);
+              const establishment = establishmentOptions.find(
+                (item) => item.id === establishmentId,
+              );
+              setSelectedEstablishmentId(establishmentId);
+              setSelectedRouteId(establishment?.routeId ?? null);
+              setSelectedProductId(null);
+            }}
+            disabled={mode === "edit"}
+            placeholder="Buscar o seleccionar ubicación..."
+          />
 
-          <label className="flex w-full flex-col gap-[6px]">
-            <span className="text-[12px] leading-none font-normal text-[#405C62]">Producto</span>
-            <select
-              className="h-11 w-full rounded-[12px] border border-[#B3B5B3] bg-white px-3 text-[14px] text-[#0D3233] outline-none"
-              value={effectiveProductId ?? ""}
-              onChange={(event) => setSelectedProductId(toNullableNumber(event.target.value))}
-              disabled={mode === "edit"}
-            >
-              <option value="">Seleccionar...</option>
-              {filteredProducts.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.name} ({option.sku})
-                </option>
-              ))}
-            </select>
-          </label>
+          <Combobox
+            label="Producto"
+            value={String(effectiveProductId ?? "")}
+            options={productComboboxOptions}
+            onChange={(value) => setSelectedProductId(toNullableNumber(value))}
+            disabled={mode === "edit"}
+            placeholder="Buscar o seleccionar producto..."
+          />
 
           <label className="flex w-full flex-col gap-[6px]">
             <span className="text-[12px] leading-none font-normal text-[#405C62]">
