@@ -114,7 +114,10 @@ function Combobox({
               <button
                 key={option.value}
                 type="button"
-                onClick={() => handleSelect(option.value)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleSelect(option.value);
+                }}
                 className={`w-full px-3 py-2.5 text-left text-[14px] hover:bg-[#E9EDE9] ${
                   option.value === value ? "bg-[#DDE2DD]" : ""
                 }`}
@@ -230,8 +233,8 @@ export default function RegistroForm({
     initialEstablishmentId,
   );
   const [selectedProductId, setSelectedProductId] = useState<number | null>(initialProductId);
-  const [selectedFileCount, setSelectedFileCount] = useState(0);
-  const [evidenceGeoJson, setEvidenceGeoJson] = useState("[]");
+  const [newEvidenceFiles, setNewEvidenceFiles] = useState<File[]>([]);
+  const [newEvidenceGeos, setNewEvidenceGeos] = useState<EvidenceGeoInfo[]>([]);
   const [newEvidencePreviewUrls, setNewEvidencePreviewUrls] = useState<string[]>([]);
   const [clientError, setClientError] = useState<string | null>(null);
   const evidenceInputRef = useRef<HTMLInputElement | null>(null);
@@ -301,14 +304,23 @@ export default function RegistroForm({
     [existingEvidenceUrls, newEvidencePreviewUrls],
   );
 
-  const remainingCapacity = TOTAL_EVIDENCE_SLOTS - existingEvidenceUrls.length;
-  const remainingEvidenceCount = existingEvidenceUrls.length + selectedFileCount;
+  const remainingCapacity = TOTAL_EVIDENCE_SLOTS - existingEvidenceUrls.length - newEvidenceFiles.length;
+  const totalEvidenceCount = existingEvidenceUrls.length + newEvidenceFiles.length;
 
   useEffect(() => {
     return () => {
       newEvidencePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [newEvidencePreviewUrls]);
+
+  useEffect(() => {
+    // Sincronizar los archivos con el input antes del submit
+    if (evidenceInputRef.current && newEvidenceFiles.length > 0) {
+      const dataTransfer = new DataTransfer();
+      newEvidenceFiles.forEach((file) => dataTransfer.items.add(file));
+      evidenceInputRef.current.files = dataTransfer.files;
+    }
+  }, [newEvidenceFiles]);
 
   useEffect(() => {
     if (!state.success || !state.recordId) return;
@@ -325,17 +337,12 @@ export default function RegistroForm({
     setClientError(null);
 
     if (fileList.length === 0) {
-      setEvidenceGeoJson("[]");
-      setSelectedFileCount(0);
-      setNewEvidencePreviewUrls([]);
+      event.currentTarget.value = "";
       return;
     }
 
     if (fileList.length > remainingCapacity) {
       event.currentTarget.value = "";
-      setEvidenceGeoJson("[]");
-      setSelectedFileCount(0);
-      setNewEvidencePreviewUrls([]);
       setClientError(`Solo puedes agregar ${remainingCapacity} evidencias nuevas.`);
       return;
     }
@@ -343,16 +350,33 @@ export default function RegistroForm({
     const geoList = await getCurrentGeoForEvidence(fileList.length);
     if (!geoList) {
       event.currentTarget.value = "";
-      setEvidenceGeoJson("[]");
-      setSelectedFileCount(0);
-      setNewEvidencePreviewUrls([]);
       setClientError("Debes permitir geolocalizacion para adjuntar evidencias.");
       return;
     }
 
-    setSelectedFileCount(fileList.length);
-    setEvidenceGeoJson(JSON.stringify(geoList));
-    setNewEvidencePreviewUrls(fileList.map((file) => URL.createObjectURL(file)));
+    // Agregar a las evidencias existentes
+    setNewEvidenceFiles((prev) => [...prev, ...fileList]);
+    setNewEvidenceGeos((prev) => [...prev, ...geoList]);
+    setNewEvidencePreviewUrls((prev) => [
+      ...prev,
+      ...fileList.map((file) => URL.createObjectURL(file)),
+    ]);
+
+    // Limpiar el input para permitir seleccionar los mismos archivos de nuevo
+    event.currentTarget.value = "";
+  }
+
+  function handleRemoveNewEvidence(index: number) {
+    setNewEvidenceFiles((prev) => prev.filter((_, i) => i !== index));
+    setNewEvidenceGeos((prev) => prev.filter((_, i) => i !== index));
+    setNewEvidencePreviewUrls((prev) => {
+      const url = prev[index];
+      if (url) {
+        URL.revokeObjectURL(url);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+    setClientError(null);
   }
 
   function handleOpenEvidencePicker() {
@@ -372,7 +396,7 @@ export default function RegistroForm({
         <input type="hidden" name="routeId" value={effectiveRouteId ?? ""} />
         <input type="hidden" name="establishmentId" value={effectiveEstablishmentId ?? ""} />
         <input type="hidden" name="productId" value={effectiveProductId ?? ""} />
-        <input type="hidden" name="evidenceGeoJson" value={evidenceGeoJson} />
+        <input type="hidden" name="evidenceGeoJson" value={JSON.stringify(newEvidenceGeos)} />
         <input type="hidden" name="removeEvidenceIdsJson" value="[]" />
 
         <div className="flex w-full flex-col gap-3">
@@ -435,6 +459,8 @@ export default function RegistroForm({
           <div className="grid w-full grid-cols-3 gap-2">
             {Array.from({ length: TOTAL_EVIDENCE_SLOTS }, (_, index) => {
               const previewUrl = evidencePreviewUrls[index] ?? null;
+              const isExistingEvidence = index < existingEvidenceUrls.length;
+              const isNewEvidence = !isExistingEvidence && index < evidencePreviewUrls.length;
               const isAddSlot =
                 index === evidencePreviewUrls.length &&
                 evidencePreviewUrls.length < TOTAL_EVIDENCE_SLOTS;
@@ -452,6 +478,16 @@ export default function RegistroForm({
                       sizes="(max-width: 768px) 30vw, 120px"
                       className="object-cover"
                     />
+                    {isNewEvidence && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveNewEvidence(index - existingEvidenceUrls.length)}
+                        className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#A43E2A] text-white text-[14px] leading-none shadow-md hover:bg-[#8A3322] transition-colors"
+                        aria-label="Eliminar evidencia"
+                      >
+                        ×
+                      </button>
+                    )}
                   </div>
                 );
               }
@@ -486,7 +522,7 @@ export default function RegistroForm({
             name="evidenceFiles"
             accept="image/jpeg,image/png,image/webp"
             multiple
-            required={mode === "create" && existingEvidenceUrls.length === 0}
+            required={mode === "create" && totalEvidenceCount === 0}
             onChange={handleEvidenceFilesChange}
             className="hidden"
           />
