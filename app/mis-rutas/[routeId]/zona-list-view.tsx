@@ -114,7 +114,11 @@ export default function ZonaListView({
               >
                 <p className="m-0 text-[16px] leading-none font-normal text-white">{item.name}</p>
 <<<<<<< ours
+<<<<<<< ours
                 {item.meta ? <p className="m-0 text-[12px] leading-none font-normal text-[#E9EDE9]">{item.meta}</p> : null}
+=======
+                <p className="m-0 text-[14px] leading-none font-normal text-[#E9EDE9]">{item.meta}</p>
+>>>>>>> theirs
 =======
                 <p className="m-0 text-[14px] leading-none font-normal text-[#E9EDE9]">{item.meta}</p>
 >>>>>>> theirs
@@ -126,7 +130,11 @@ export default function ZonaListView({
               >
                 <p className="m-0 text-[16px] leading-none font-normal text-white">{item.name}</p>
 <<<<<<< ours
+<<<<<<< ours
                 {item.meta ? <p className="m-0 text-[12px] leading-none font-normal text-[#E9EDE9]">{item.meta}</p> : null}
+=======
+                <p className="m-0 text-[14px] leading-none font-normal text-[#E9EDE9]">{item.meta}</p>
+>>>>>>> theirs
 =======
                 <p className="m-0 text-[14px] leading-none font-normal text-[#E9EDE9]">{item.meta}</p>
 >>>>>>> theirs
