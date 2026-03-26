@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+:root {
+  --font-outfit: "Segoe UI", Arial, sans-serif;
+}
+
 @theme inline {
   --font-sans: var(--font-outfit);
 }

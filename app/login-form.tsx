@@ -128,32 +128,15 @@ export default function LoginForm({ urlError = null }: LoginFormProps) {
 
       <div className="flex w-full flex-col gap-[6px]">
         <label
-<<<<<<< ours
-<<<<<<< ours
           className="m-0 text-[12px] leading-none font-normal text-[#405C62]"
           htmlFor="email"
-=======
-=======
->>>>>>> theirs
-          className="m-0 text-[14px] leading-none font-normal text-[#405C62]"
-          htmlFor="username"
->>>>>>> theirs
         >
           Correo
         </label>
         <input
-<<<<<<< ours
-<<<<<<< ours
           className="h-[44px] w-full rounded-[12px] border border-[#B3B5B3] bg-white px-3 text-[14px] leading-none font-normal text-[#0D3233] outline-none placeholder:text-[#8A9BA7]"
           id="email"
           name="email"
-=======
-=======
->>>>>>> theirs
-          className="h-[44px] w-full rounded-[12px] border border-[#B3B5B3] bg-white px-3 text-[16px] leading-none font-normal text-[#0D3233] outline-none placeholder:text-[#8A9BA7]"
-          id="username"
-          name="username"
->>>>>>> theirs
           type="email"
           placeholder="usuario@empresa.com"
           autoComplete="email"
@@ -169,7 +152,6 @@ export default function LoginForm({ urlError = null }: LoginFormProps) {
         >
           Contrasena
         </label>
-<<<<<<< ours
         <div className="relative">
           <input
             key={getPasswordInputKey(state)}
@@ -226,33 +208,6 @@ export default function LoginForm({ urlError = null }: LoginFormProps) {
       {displayError ? (
         <p className="m-0 text-[12px] leading-[1.3] font-normal text-[#B42318]">
           {displayError}
-=======
-        <input
-          className="h-[44px] w-full rounded-[12px] border border-[#B3B5B3] bg-white px-3 text-[16px] leading-none font-normal text-[#0D3233] outline-none placeholder:text-[#8A9BA7]"
-          id="password"
-          name="password"
-          type={showPassword ? "text" : "password"}
-          placeholder="********"
-          autoComplete="current-password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-          minLength={8}
-        />
-      </div>
-
-      <button
-        className="w-fit cursor-pointer border-0 bg-transparent p-0 text-[14px] leading-none font-normal text-[#5A7984]"
-        type="button"
-        onClick={() => setShowPassword((prev) => !prev)}
-      >
-        {showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
-      </button>
-
-      {state.error ? (
-        <p className="m-0 text-[14px] leading-[1.3] font-normal text-[#B42318]">
-          {state.error}
->>>>>>> theirs
         </p>
       ) : null}
       {state.success ? (

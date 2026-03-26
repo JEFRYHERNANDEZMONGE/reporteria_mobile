@@ -266,7 +266,6 @@ export default function ProfileForm({
         >
           Contrasena actual
         </label>
-<<<<<<< ours
         <div className="relative">
           <input
             id="currentPassword"
@@ -294,22 +293,6 @@ export default function ProfileForm({
             )}
           </button>
         </div>
-=======
-        <input
-          id="currentPassword"
-          name="currentPassword"
-          type={showCurrentPassword ? "text" : "password"}
-          placeholder="********"
-          className="h-[44px] w-full rounded-[12px] border border-[#B3B5B3] bg-white px-3 text-[16px] leading-none font-normal text-[#0D3233] outline-none placeholder:text-[#8A9BA7]"
-        />
-        <button
-          type="button"
-          onClick={() => setShowCurrentPassword((prev) => !prev)}
-          className="w-fit border-0 bg-transparent p-0 text-[14px] leading-none font-normal text-[#5A7984]"
-        >
-          {showCurrentPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
-        </button>
->>>>>>> theirs
       </div>
 
       <div className="flex w-full flex-col gap-[6px]">
@@ -319,7 +302,6 @@ export default function ProfileForm({
         >
           Nueva contrasena
         </label>
-<<<<<<< ours
         <div className="relative">
           <input
             id="newPassword"
@@ -347,22 +329,6 @@ export default function ProfileForm({
             )}
           </button>
         </div>
-=======
-        <input
-          id="newPassword"
-          name="newPassword"
-          type={showNewPassword ? "text" : "password"}
-          placeholder="********"
-          className="h-[44px] w-full rounded-[12px] border border-[#B3B5B3] bg-white px-3 text-[16px] leading-none font-normal text-[#0D3233] outline-none placeholder:text-[#8A9BA7]"
-        />
-        <button
-          type="button"
-          onClick={() => setShowNewPassword((prev) => !prev)}
-          className="w-fit border-0 bg-transparent p-0 text-[14px] leading-none font-normal text-[#5A7984]"
-        >
-          {showNewPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
-        </button>
->>>>>>> theirs
       </div>
 
       <div className="flex w-full flex-col gap-[6px]">
@@ -372,7 +338,6 @@ export default function ProfileForm({
         >
           Confirmar contrasena
         </label>
-<<<<<<< ours
         <div className="relative">
           <input
             id="confirmPassword"
@@ -400,22 +365,6 @@ export default function ProfileForm({
             )}
           </button>
         </div>
-=======
-        <input
-          id="confirmPassword"
-          name="confirmPassword"
-          type={showConfirmPassword ? "text" : "password"}
-          placeholder="********"
-          className="h-[44px] w-full rounded-[12px] border border-[#B3B5B3] bg-white px-3 text-[16px] leading-none font-normal text-[#0D3233] outline-none placeholder:text-[#8A9BA7]"
-        />
-        <button
-          type="button"
-          onClick={() => setShowConfirmPassword((prev) => !prev)}
-          className="w-fit border-0 bg-transparent p-0 text-[14px] leading-none font-normal text-[#5A7984]"
-        >
-          {showConfirmPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
-        </button>
->>>>>>> theirs
       </div>
 
       {state.error ? (
