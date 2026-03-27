@@ -58,7 +58,7 @@ export default function AppShell({
           <div className="flex items-center gap-2">
             {isHome ? (
               <Image
-                src="/logo.png"
+                src="/logo-hm.webp"
                 alt="Reporteria"
                 width={24}
                 height={24}

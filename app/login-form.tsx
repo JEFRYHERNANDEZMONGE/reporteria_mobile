@@ -117,7 +117,7 @@ export default function LoginForm({ urlError = null }: LoginFormProps) {
     >
       <div className="flex w-full items-center justify-center">
         <Image
-          src="/logo.png"
+          src="/logo-hm.webp"
           alt="Logo Reporteria"
           width={120}
           height={120}

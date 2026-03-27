@@ -53,7 +53,7 @@ export default async function HomePage() {
         <div className="flex min-h-0 flex-col gap-[clamp(0.75rem,3vh,2rem)]">
           <div className="flex w-full justify-center">
             <Image
-              src="/logo.png"
+              src="/logo-hm.webp"
               alt="Logo Reporteria"
               width={120}
               height={120}
