@@ -10,12 +10,6 @@ export type ForgotPasswordActionState = {
   email: string;
 };
 
-export const initialForgotPasswordActionState: ForgotPasswordActionState = {
-  error: null,
-  success: false,
-  email: "",
-};
-
 export async function forgotPasswordAction(
   _prevState: ForgotPasswordActionState,
   formData: FormData,

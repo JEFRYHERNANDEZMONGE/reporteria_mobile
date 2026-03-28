@@ -13,14 +13,6 @@ export type LoginActionState = {
   email?: string;
 };
 
-export const initialLoginActionState: LoginActionState = {
-  error: null,
-  success: false,
-  resetPassword: false,
-  passwordResetNonce: 0,
-  email: "",
-};
-
 export async function loginAction(
   prevState: LoginActionState,
   formData: FormData,

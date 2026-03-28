@@ -5,8 +5,13 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   forgotPasswordAction,
-  initialForgotPasswordActionState,
 } from "./actions";
+
+const initialForgotPasswordActionState = {
+  error: null,
+  success: false,
+  email: "",
+};
 
 function ForgotPasswordSubmitButton() {
   const { pending } = useFormStatus();
