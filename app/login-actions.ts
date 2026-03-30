@@ -14,6 +14,20 @@ export type LoginActionState = {
   email?: string;
 };
 
+function formatSupabaseLoginDebug(error: {
+  code?: string;
+  message?: string;
+  status?: number;
+}) {
+  const parts = [
+    error.code ? `code=${error.code}` : null,
+    typeof error.status === "number" ? `status=${error.status}` : null,
+    error.message ? `message=${error.message}` : null,
+  ].filter(Boolean);
+
+  return parts.length ? ` [debug: ${parts.join(" | ")}]` : " [debug: unknown-auth-error]";
+}
+
 export async function loginAction(
   prevState: LoginActionState,
   formData: FormData,
@@ -71,7 +85,7 @@ export async function loginAction(
 
     return buildLoginActionState({
       prevState,
-      error: "No fue posible iniciar sesion con esas credenciales.",
+      error: `No fue posible iniciar sesion con esas credenciales.${formatSupabaseLoginDebug(error)}`,
       email,
       resetPassword: true,
     });

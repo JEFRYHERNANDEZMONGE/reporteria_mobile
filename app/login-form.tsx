@@ -219,6 +219,7 @@ export default function LoginForm({ urlError = null }: LoginFormProps) {
       <SubmitButton disabled={isGooglePending} />
       <Link
         href="/login/olvide-contrasena"
+        prefetch={false}
         className="text-center text-[12px] leading-none font-normal text-[#405C62] underline underline-offset-2"
       >
         Olvidaste tu contrasena?
