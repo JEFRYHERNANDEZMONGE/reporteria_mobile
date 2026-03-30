@@ -1,8 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { getScrollableListClassName, getScrollableListObserverOptions } from "@/app/_components/scrollable-list-state.mjs";
+import { useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
+import CollapsibleListSearch from "@/app/_components/collapsible-list-search";
+import {
+  getScrollableListClassName,
+  getScrollableListObserverOptions,
+} from "@/app/_components/scrollable-list-state.mjs";
+import { sanitizeListSearchQuery } from "@/lib/list-search.mjs";
 import type { ZonaListItem, ZonaSource } from "./zona-types";
 
 type ZonaListResponse = {
@@ -37,45 +42,92 @@ export default function ZonaListView({
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLElement | null>(null);
+  const hasMountedSearchRef = useRef(false);
+  const deferredSearchInput = useDeferredValue(searchInput);
+  const activeQuery = sanitizeListSearchQuery(deferredSearchInput);
 
   useEffect(() => {
+    if (activeQuery) return;
     setItems(initialItems);
     setHasMore(initialHasMore);
     setLoadError(null);
-  }, [initialHasMore, initialItems]);
+  }, [activeQuery, initialHasMore, initialItems]);
+
+  const fetchItems = useCallback(
+    async ({
+      offset,
+      reset,
+      query,
+    }: {
+      offset: number;
+      reset: boolean;
+      query: string;
+    }) => {
+      setIsLoadingMore(true);
+      setLoadError(null);
+
+      try {
+        const params = new URLSearchParams({
+          offset: String(offset),
+          limit: String(pageSize),
+        });
+
+        if (query) {
+          params.set("query", query);
+        }
+
+        const response = await fetch(`/api/mis-rutas/${routeId}/${source}?${params.toString()}`);
+        if (!response.ok) {
+          throw new Error("No se pudieron cargar mas elementos.");
+        }
+
+        const payload = (await response.json()) as ZonaListResponse;
+        if (reset) {
+          setItems(payload.items);
+        } else {
+          setItems((current) => {
+            const seen = new Set(current.map((item) => item.id));
+            const next = payload.items.filter((item) => !seen.has(item.id));
+            return current.concat(next);
+          });
+        }
+        setHasMore(payload.hasMore);
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : "Error cargando elementos.");
+      } finally {
+        setIsLoadingMore(false);
+      }
+    },
+    [pageSize, routeId, source],
+  );
 
   const loadMore = useCallback(async () => {
     if (isLoadingMore || !hasMore) return;
 
-    setIsLoadingMore(true);
-    setLoadError(null);
+    await fetchItems({
+      offset: items.length,
+      reset: false,
+      query: activeQuery,
+    });
+  }, [activeQuery, fetchItems, hasMore, isLoadingMore, items.length]);
 
-    try {
-      const params = new URLSearchParams({
-        offset: String(items.length),
-        limit: String(pageSize),
-      });
-
-      const response = await fetch(`/api/mis-rutas/${routeId}/${source}?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error("No se pudieron cargar mas elementos.");
-      }
-
-      const payload = (await response.json()) as ZonaListResponse;
-      setItems((current) => {
-        const seen = new Set(current.map((item) => item.id));
-        const next = payload.items.filter((item) => !seen.has(item.id));
-        return current.concat(next);
-      });
-      setHasMore(payload.hasMore);
-    } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "Error cargando elementos.");
-    } finally {
-      setIsLoadingMore(false);
+  useEffect(() => {
+    if (!hasMountedSearchRef.current) {
+      hasMountedSearchRef.current = true;
+      return;
     }
-  }, [hasMore, isLoadingMore, items.length, pageSize, routeId, source]);
+
+    scrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
+    void fetchItems({
+      offset: 0,
+      reset: true,
+      query: activeQuery,
+    });
+  }, [activeQuery, fetchItems]);
 
   useEffect(() => {
     if (!hasMore || isLoadingMore) return;
@@ -97,13 +149,35 @@ export default function ZonaListView({
     return () => observer.disconnect();
   }, [hasMore, isLoadingMore, loadMore]);
 
+  function handleToggleSearch() {
+    if (isSearchOpen) {
+      setIsSearchOpen(false);
+      setSearchInput("");
+      return;
+    }
+
+    setIsSearchOpen(true);
+  }
+
+  const effectiveEmptyMessage = activeQuery
+    ? `No se encontraron establecimientos para "${activeQuery}".`
+    : emptyMessage;
+
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col">
       <section ref={scrollRef} className={getScrollableListClassName({ topPadding: true })}>
         <div className="flex w-full flex-col gap-3">
+          <CollapsibleListSearch
+            isOpen={isSearchOpen}
+            query={searchInput}
+            onToggle={handleToggleSearch}
+            onQueryChange={setSearchInput}
+            placeholder="Buscar establecimiento"
+          />
+
           {items.length === 0 ? (
             <div className="rounded-[12px] border border-[#B3B5B3] bg-white p-4 text-center text-[16px] text-[#405C62]">
-              {emptyMessage}
+              {effectiveEmptyMessage}
             </div>
           ) : null}
 
@@ -116,7 +190,11 @@ export default function ZonaListView({
                 className="flex h-[72px] w-full flex-col justify-center gap-1 rounded-[12px] bg-[#5A7A84] px-3"
               >
                 <p className="m-0 text-[16px] leading-none font-normal text-white">{item.name}</p>
-                {item.meta ? <p className="m-0 text-[12px] leading-none font-normal text-[#E9EDE9]">{item.meta}</p> : null}
+                {item.meta ? (
+                  <p className="m-0 text-[12px] leading-none font-normal text-[#E9EDE9]">
+                    {item.meta}
+                  </p>
+                ) : null}
               </Link>
             ) : (
               <article
@@ -124,7 +202,11 @@ export default function ZonaListView({
                 className="flex h-[72px] w-full flex-col justify-center gap-1 rounded-[12px] bg-[#5A7A84] px-3"
               >
                 <p className="m-0 text-[16px] leading-none font-normal text-white">{item.name}</p>
-                {item.meta ? <p className="m-0 text-[12px] leading-none font-normal text-[#E9EDE9]">{item.meta}</p> : null}
+                {item.meta ? (
+                  <p className="m-0 text-[12px] leading-none font-normal text-[#E9EDE9]">
+                    {item.meta}
+                  </p>
+                ) : null}
               </article>
             );
           })}
@@ -158,5 +240,3 @@ export default function ZonaListView({
     </div>
   );
 }
-
-

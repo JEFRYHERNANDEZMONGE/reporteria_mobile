@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAllowedAppRole } from "@/lib/auth/roles";
+import { sanitizeListSearchQuery } from "@/lib/list-search.mjs";
 import { parsePaginationParams } from "@/lib/pagination";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getZonaItemsPage } from "@/app/mis-rutas/[routeId]/zona-data";
@@ -61,6 +62,7 @@ export async function GET(
 
   const url = new URL(request.url);
   const { offset, limit } = parsePaginationParams(url.searchParams);
+  const query = sanitizeListSearchQuery(url.searchParams.get("query"));
 
   const page = await getZonaItemsPage({
     supabase,
@@ -70,6 +72,7 @@ export async function GET(
     source: "pendientes",
     offset,
     limit,
+    query,
   });
 
   return NextResponse.json(page);

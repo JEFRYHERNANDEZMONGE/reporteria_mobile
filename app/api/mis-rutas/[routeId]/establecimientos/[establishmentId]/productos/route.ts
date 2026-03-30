@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAllowedAppRole } from "@/lib/auth/roles";
+import { sanitizeListSearchQuery } from "@/lib/list-search.mjs";
 import { parsePaginationParams } from "@/lib/pagination";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getEstablishmentProductsPage } from "@/app/mis-rutas/[routeId]/establecimientos/detail-products-data";
@@ -57,6 +58,7 @@ export async function GET(
   const source = url.searchParams.get("source") === "completadas"
     ? "completadas"
     : "pendientes";
+  const query = sanitizeListSearchQuery(url.searchParams.get("query"));
 
   const lapsoUserId = routeRow.assigned_user ?? profile.user_id;
 
@@ -68,6 +70,7 @@ export async function GET(
     source,
     offset,
     limit,
+    query,
   });
 
   if (!page) {

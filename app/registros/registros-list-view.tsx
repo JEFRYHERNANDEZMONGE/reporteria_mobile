@@ -1,8 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { getScrollableListClassName, getScrollableListObserverOptions } from "@/app/_components/scrollable-list-state.mjs";
+import { useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
+import CollapsibleListSearch from "@/app/_components/collapsible-list-search";
+import {
+  getScrollableListClassName,
+  getScrollableListObserverOptions,
+} from "@/app/_components/scrollable-list-state.mjs";
+import { sanitizeListSearchQuery } from "@/lib/list-search.mjs";
 import type { RegistroListItem } from "./types";
 
 type RegistrosResponse = {
@@ -38,44 +43,92 @@ export default function RegistrosListView({
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLElement | null>(null);
+  const hasMountedSearchRef = useRef(false);
+  const deferredSearchInput = useDeferredValue(searchInput);
+  const activeQuery = sanitizeListSearchQuery(deferredSearchInput);
 
   useEffect(() => {
+    if (activeQuery) return;
     setRecords(initialRecords);
     setHasMore(initialHasMore);
     setLoadError(null);
-  }, [initialHasMore, initialRecords]);
+  }, [activeQuery, initialHasMore, initialRecords]);
+
+  const fetchRecords = useCallback(
+    async ({
+      offset,
+      reset,
+      query,
+    }: {
+      offset: number;
+      reset: boolean;
+      query: string;
+    }) => {
+      setIsLoadingMore(true);
+      setLoadError(null);
+
+      try {
+        const params = new URLSearchParams({
+          offset: String(offset),
+          limit: String(pageSize),
+        });
+
+        if (query) {
+          params.set("query", query);
+        }
+
+        const response = await fetch(`/api/registros?${params.toString()}`);
+        if (!response.ok) {
+          throw new Error("No se pudieron cargar mas registros.");
+        }
+
+        const payload = (await response.json()) as RegistrosResponse;
+        if (reset) {
+          setRecords(payload.items);
+        } else {
+          setRecords((current) => {
+            const seen = new Set(current.map((item) => item.recordId));
+            const next = payload.items.filter((item) => !seen.has(item.recordId));
+            return current.concat(next);
+          });
+        }
+        setHasMore(payload.hasMore);
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : "Error cargando registros.");
+      } finally {
+        setIsLoadingMore(false);
+      }
+    },
+    [pageSize],
+  );
 
   const loadMore = useCallback(async () => {
     if (isLoadingMore || !hasMore) return;
 
-    setIsLoadingMore(true);
-    setLoadError(null);
+    await fetchRecords({
+      offset: records.length,
+      reset: false,
+      query: activeQuery,
+    });
+  }, [activeQuery, fetchRecords, hasMore, isLoadingMore, records.length]);
 
-    try {
-      const params = new URLSearchParams({
-        offset: String(records.length),
-        limit: String(pageSize),
-      });
-      const response = await fetch(`/api/registros?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error("No se pudieron cargar mas registros.");
-      }
-
-      const payload = (await response.json()) as RegistrosResponse;
-      setRecords((current) => {
-        const seen = new Set(current.map((item) => item.recordId));
-        const next = payload.items.filter((item) => !seen.has(item.recordId));
-        return current.concat(next);
-      });
-      setHasMore(payload.hasMore);
-    } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "Error cargando registros.");
-    } finally {
-      setIsLoadingMore(false);
+  useEffect(() => {
+    if (!hasMountedSearchRef.current) {
+      hasMountedSearchRef.current = true;
+      return;
     }
-  }, [hasMore, isLoadingMore, pageSize, records.length]);
+
+    scrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
+    void fetchRecords({
+      offset: 0,
+      reset: true,
+      query: activeQuery,
+    });
+  }, [activeQuery, fetchRecords]);
 
   useEffect(() => {
     if (!hasMore || isLoadingMore) return;
@@ -97,6 +150,20 @@ export default function RegistrosListView({
     return () => observer.disconnect();
   }, [hasMore, isLoadingMore, loadMore]);
 
+  function handleToggleSearch() {
+    if (isSearchOpen) {
+      setIsSearchOpen(false);
+      setSearchInput("");
+      return;
+    }
+
+    setIsSearchOpen(true);
+  }
+
+  const emptyMessage = activeQuery
+    ? `No se encontraron registros para "${activeQuery}".`
+    : "No hay registros disponibles.";
+
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col">
       <section ref={scrollRef} className={getScrollableListClassName({ topPadding: true })}>
@@ -108,9 +175,17 @@ export default function RegistrosListView({
             Crear registro
           </Link>
 
+          <CollapsibleListSearch
+            isOpen={isSearchOpen}
+            query={searchInput}
+            onToggle={handleToggleSearch}
+            onQueryChange={setSearchInput}
+            placeholder="Buscar por establecimiento, producto o registro"
+          />
+
           {records.length === 0 ? (
             <div className="rounded-[12px] border border-[#B3B5B3] bg-white p-4 text-center text-[14px] text-[#405C62]">
-              No hay registros disponibles.
+              {emptyMessage}
             </div>
           ) : null}
 
@@ -163,5 +238,3 @@ export default function RegistrosListView({
     </div>
   );
 }
-
-

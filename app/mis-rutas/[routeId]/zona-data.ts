@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { buildSqlContainsPattern, sanitizeListSearchQuery } from "@/lib/list-search.mjs";
 import type { ZonaListItem, ZonaSource } from "./zona-types";
 
 const ESTABLISHMENT_SCAN_BATCH = 60;
@@ -32,6 +33,7 @@ type Params = {
   source: ZonaSource;
   offset: number;
   limit: number;
+  query?: string;
 };
 
 async function buildSummariesForBatch({
@@ -158,7 +160,9 @@ export async function getZonaItemsPage({
   source,
   offset,
   limit,
+  query,
 }: Params): Promise<{ items: ZonaListItem[]; hasMore: boolean }> {
+  const searchPattern = buildSqlContainsPattern(sanitizeListSearchQuery(query));
   const collected: ZonaListItem[] = [];
   let filteredOffset = 0;
   let scanOffset = 0;
@@ -170,6 +174,7 @@ export async function getZonaItemsPage({
       .select("establishment_id, name")
       .eq("route_id", routeId)
       .eq("is_active", true)
+      .ilike("name", searchPattern ?? "%")
       .order("name", { ascending: true })
       .range(scanOffset, scanOffset + ESTABLISHMENT_SCAN_BATCH - 1);
 

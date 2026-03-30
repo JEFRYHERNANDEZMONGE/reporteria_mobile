@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import CollapsibleListSearch from "@/app/_components/collapsible-list-search";
 import { getScrollableListClassName } from "@/app/_components/scrollable-list-state.mjs";
+import { matchesListSearch, sanitizeListSearchQuery } from "@/lib/list-search.mjs";
 import SupermercadoDetalleModal from "./establecimientos/supermercado-detalle-modal";
 import type { DetailSource, EstablishmentDetailData } from "./establecimientos/detail-types";
 
@@ -30,25 +32,54 @@ export default function ZonaListWithModalView({
   backHref,
 }: ZonaListWithModalViewProps) {
   const [activeEstablishmentId, setActiveEstablishmentId] = useState<number | null>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
 
   const detailById = useMemo(
     () => new Map(details.map((detail) => [detail.establishmentId, detail])),
     [details],
   );
+  const filteredItems = useMemo(
+    () => items.filter((item) => matchesListSearch(searchInput, [item.name, item.meta])),
+    [items, searchInput],
+  );
+  const activeQuery = sanitizeListSearchQuery(searchInput);
 
-  const activeDetail = activeEstablishmentId !== null ? (detailById.get(activeEstablishmentId) ?? null) : null;
+  const activeDetail = activeEstablishmentId !== null
+    ? (detailById.get(activeEstablishmentId) ?? null)
+    : null;
+
+  function handleToggleSearch() {
+    if (isSearchOpen) {
+      setIsSearchOpen(false);
+      setSearchInput("");
+      return;
+    }
+
+    setIsSearchOpen(true);
+  }
 
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col">
       <section className={getScrollableListClassName({ topPadding: true })}>
         <div className="flex w-full flex-col gap-3">
-          {items.length === 0 ? (
+          <CollapsibleListSearch
+            isOpen={isSearchOpen}
+            query={searchInput}
+            onToggle={handleToggleSearch}
+            onQueryChange={setSearchInput}
+            placeholder="Buscar establecimiento"
+          />
+
+          {filteredItems.length === 0 ? (
             <div className="rounded-[12px] border border-[#B3B5B3] bg-white p-4 text-center text-[16px] text-[#405C62]">
-              {emptyMessage}
+              {activeQuery
+                ? `No se encontraron establecimientos para "${activeQuery}".`
+                : emptyMessage}
             </div>
           ) : null}
 
-          {items.map((item) => (
+          {filteredItems.map((item) => (
             <button
               key={item.id}
               type="button"
@@ -86,5 +117,3 @@ export default function ZonaListWithModalView({
     </div>
   );
 }
-
-

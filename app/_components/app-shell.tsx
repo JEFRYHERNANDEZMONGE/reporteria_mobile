@@ -4,7 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { ReactNode, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, House } from "lucide-react";
+
+import { getAppShellHeaderState } from "./app-shell-header-state.mjs";
 
 type AppShellProps = {
   title: string;
@@ -49,7 +51,7 @@ export default function AppShell({
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const isHome = pathname === "/home";
+  const { isHome, showBackButton, showHomeButton } = getAppShellHeaderState(pathname);
 
   return (
     <main className="flex h-dvh w-full items-center justify-center overflow-hidden bg-[#E9EDE9]">
@@ -66,14 +68,27 @@ export default function AppShell({
                 priority
               />
             ) : (
-              <button
-                type="button"
-                aria-label="Volver"
-                onClick={() => router.back()}
-                className="flex h-10 w-10 items-center justify-center border-0 bg-transparent p-0 text-[#0D3233]"
-              >
-                <ArrowLeft size={26} strokeWidth={3.5} />
-              </button>
+              <div className="flex items-center gap-1">
+                {showBackButton ? (
+                  <button
+                    type="button"
+                    aria-label="Volver"
+                    onClick={() => router.back()}
+                    className="flex h-10 w-10 items-center justify-center border-0 bg-transparent p-0 text-[#0D3233]"
+                  >
+                    <ArrowLeft size={26} strokeWidth={3.5} />
+                  </button>
+                ) : null}
+                {showHomeButton ? (
+                  <Link
+                    href="/home"
+                    aria-label="Ir al inicio"
+                    className="flex h-10 w-10 items-center justify-center text-[#0D3233]"
+                  >
+                    <House size={24} strokeWidth={3} />
+                  </Link>
+                ) : null}
+              </div>
             )}
             <p className="m-0 text-[22px] leading-none font-normal text-[#0D3233]">
               {title}

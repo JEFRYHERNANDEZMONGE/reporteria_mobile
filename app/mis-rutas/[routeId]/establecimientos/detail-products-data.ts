@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { buildSqlContainsPattern, sanitizeListSearchQuery } from "@/lib/list-search.mjs";
 import type { DetailSource, ProductRecordItem } from "./detail-types";
 
 const PRODUCT_SCAN_BATCH = 60;
@@ -35,6 +36,7 @@ type Params = {
   source: DetailSource;
   offset: number;
   limit: number;
+  query?: string;
 };
 
 export type EstablishmentProductsPage = {
@@ -53,7 +55,9 @@ export async function getEstablishmentProductsPage({
   source,
   offset,
   limit,
+  query,
 }: Params): Promise<EstablishmentProductsPage | null> {
+  const searchPattern = buildSqlContainsPattern(sanitizeListSearchQuery(query));
   const { data: establishmentRow } = await supabase
     .from("establishment")
     .select("establishment_id, name")
@@ -111,13 +115,19 @@ export async function getEstablishmentProductsPage({
   let reachedEnd = false;
 
   while (collected.length < limit + 1 && !reachedEnd) {
-    const { data: productRows } = await supabase
+    let productQuery = supabase
       .from("product")
       .select("product_id, name, sku")
       .in("product_id", productIds)
       .eq("is_active", true)
       .order("name", { ascending: true })
       .range(scanOffset, scanOffset + PRODUCT_SCAN_BATCH - 1);
+
+    if (searchPattern) {
+      productQuery = productQuery.or(`name.ilike.${searchPattern},sku.ilike.${searchPattern}`);
+    }
+
+    const { data: productRows } = await productQuery;
 
     const batch = productRows ?? [];
     if (batch.length === 0) {

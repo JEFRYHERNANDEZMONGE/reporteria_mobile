@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AllowedAppRole } from "@/lib/auth/roles";
+import { buildSqlContainsPattern, sanitizeListSearchQuery } from "@/lib/list-search.mjs";
 import type { RegistroListItem } from "./types";
 
 type Params = {
@@ -8,6 +9,7 @@ type Params = {
   profileRole: AllowedAppRole;
   offset: number;
   limit: number;
+  query?: string;
 };
 
 export async function getRegistrosPage({
@@ -16,7 +18,41 @@ export async function getRegistrosPage({
   profileRole,
   offset,
   limit,
+  query,
 }: Params): Promise<{ items: RegistroListItem[]; hasMore: boolean }> {
+  const sanitizedQuery = sanitizeListSearchQuery(query);
+  const searchPattern = buildSqlContainsPattern(sanitizedQuery);
+  const numericRecordId = /^\d+$/.test(sanitizedQuery) ? Number(sanitizedQuery) : null;
+
+  let matchingProductIds: number[] = [];
+  let matchingEstablishmentIds: number[] = [];
+
+  if (searchPattern) {
+    const [{ data: products }, { data: establishments }] = await Promise.all([
+      supabase
+        .from("product")
+        .select("product_id")
+        .or(`name.ilike.${searchPattern},sku.ilike.${searchPattern}`),
+      supabase
+        .from("establishment")
+        .select("establishment_id")
+        .ilike("name", searchPattern),
+    ]);
+
+    matchingProductIds = (products ?? []).map((product) => product.product_id);
+    matchingEstablishmentIds = (establishments ?? []).map(
+      (establishment) => establishment.establishment_id,
+    );
+
+    if (
+      numericRecordId === null &&
+      matchingProductIds.length === 0 &&
+      matchingEstablishmentIds.length === 0
+    ) {
+      return { items: [], hasMore: false };
+    }
+  }
+
   let recordsQuery = supabase
     .from("check_record")
     .select(
@@ -27,6 +63,24 @@ export async function getRegistrosPage({
 
   if (profileRole === "rutero") {
     recordsQuery = recordsQuery.eq("user_id", profileUserId);
+  }
+
+  if (searchPattern) {
+    const filters = [];
+
+    if (numericRecordId !== null) {
+      filters.push(`record_id.eq.${numericRecordId}`);
+    }
+
+    if (matchingProductIds.length > 0) {
+      filters.push(`product_id.in.(${matchingProductIds.join(",")})`);
+    }
+
+    if (matchingEstablishmentIds.length > 0) {
+      filters.push(`establishment_id.in.(${matchingEstablishmentIds.join(",")})`);
+    }
+
+    recordsQuery = recordsQuery.or(filters.join(","));
   }
 
   const { data: checkRecordRows } = await recordsQuery;

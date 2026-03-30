@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAllowedAppRole } from "@/lib/auth/roles";
+import { sanitizeListSearchQuery } from "@/lib/list-search.mjs";
 import { parsePaginationParams } from "@/lib/pagination";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getRegistrosPage } from "@/app/registros/data";
@@ -26,6 +27,7 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const { offset, limit } = parsePaginationParams(url.searchParams);
+  const query = sanitizeListSearchQuery(url.searchParams.get("query"));
 
   const page = await getRegistrosPage({
     supabase,
@@ -33,6 +35,7 @@ export async function GET(request: Request) {
     profileRole: profile.role,
     offset,
     limit,
+    query,
   });
 
   return NextResponse.json(page);
