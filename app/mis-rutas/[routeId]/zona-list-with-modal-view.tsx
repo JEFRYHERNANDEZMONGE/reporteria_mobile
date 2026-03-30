@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { getScrollableListClassName } from "@/app/_components/scrollable-list-state.mjs";
 import SupermercadoDetalleModal from "./establecimientos/supermercado-detalle-modal";
 import type { DetailSource, EstablishmentDetailData } from "./establecimientos/detail-types";
 
@@ -39,7 +40,7 @@ export default function ZonaListWithModalView({
 
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col">
-      <section className="min-h-0 flex-1 overflow-y-auto pb-20 pt-1">
+      <section className={getScrollableListClassName({ topPadding: true })}>
         <div className="flex w-full flex-col gap-3">
           {items.length === 0 ? (
             <div className="rounded-[12px] border border-[#B3B5B3] bg-white p-4 text-center text-[16px] text-[#405C62]">

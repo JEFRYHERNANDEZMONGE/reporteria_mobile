@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getScrollableListClassName, getScrollableListObserverOptions } from "@/app/_components/scrollable-list-state.mjs";
 
 export type DetailSource = "pendientes" | "completadas";
 
@@ -103,6 +104,7 @@ export default function SupermercadoDetalleView({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLElement | null>(null);
 
   const emptyMessage = !hasActiveLapso
     ? "No hay lapso activo para esta ruta."
@@ -154,7 +156,8 @@ export default function SupermercadoDetalleView({
   useEffect(() => {
     if (!hasMore || isLoadingMore) return;
     const node = sentinelRef.current;
-    if (!node) return;
+    const container = scrollRef.current;
+    if (!node || !container) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -163,7 +166,7 @@ export default function SupermercadoDetalleView({
           void loadMore();
         }
       },
-      { rootMargin: "180px 0px" },
+      getScrollableListObserverOptions(container),
     );
 
     observer.observe(node);
@@ -172,7 +175,7 @@ export default function SupermercadoDetalleView({
 
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col">
-      <section className="min-h-0 flex-1 overflow-y-auto pb-20 pt-1">
+      <section ref={scrollRef} className={getScrollableListClassName({ topPadding: true })}>
         <div className="rounded-[12px] border border-[#B3B5B3] bg-[#E9EDE9] p-3">
           <p className="m-0 text-[14px] leading-none font-normal text-[#5A7984]">Establecimiento</p>
           <p className="mt-1 text-[18px] leading-none font-normal text-[#0D3233]">{establishmentName}</p>

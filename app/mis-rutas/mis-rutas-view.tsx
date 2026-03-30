@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getScrollableListClassName, getScrollableListObserverOptions } from "@/app/_components/scrollable-list-state.mjs";
 import type { RouteListItem } from "./types";
 
 type MisRutasResponse = {
@@ -78,7 +79,7 @@ export default function MisRutasView({
           void loadMore();
         }
       },
-      { root: container, rootMargin: "180px 0px" },
+      getScrollableListObserverOptions(container),
     );
 
     observer.observe(node);
@@ -87,7 +88,7 @@ export default function MisRutasView({
 
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col">
-      <section ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto pb-20 pt-1">
+      <section ref={scrollRef} className={getScrollableListClassName({ topPadding: true })}>
         <div className="flex w-full flex-col gap-[15px] pt-5">
           {routes.length === 0 ? (
             <div className="rounded-[12px] border border-[#B3B5B3] bg-white p-4 text-center text-[14px] text-[#405C62]">

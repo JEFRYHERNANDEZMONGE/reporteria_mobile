@@ -9,6 +9,7 @@ import MobileSelectField, {
 } from "@/app/_components/mobile-select-field";
 import { createRegistroAction, updateRegistroAction, uploadSingleEvidenceAction } from "./actions";
 import { buildEvidenceStampLines, stampEvidenceFile } from "./evidence-stamp.mjs";
+import { isRegistroSubmitDisabled } from "./registro-form-state.mjs";
 import type {
   EstablishmentOption,
   EvidenceGeoInfo,
@@ -236,7 +237,7 @@ export default function RegistroForm({
 }: RegistroFormProps) {
   const router = useRouter();
   const action = mode === "create" ? createRegistroAction : updateRegistroAction;
-  const [state, , pending] = useActionState(action, INITIAL_ACTION_STATE);
+  const [state, formAction, pending] = useActionState(action, INITIAL_ACTION_STATE);
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(initialRouteId);
   const [selectedEstablishmentId, setSelectedEstablishmentId] = useState<number | null>(
     initialEstablishmentId,
@@ -349,7 +350,7 @@ export default function RegistroForm({
 
   useEffect(() => {
     // Sincronizar los archivos con el input antes del submit
-    if (evidenceInputRef.current && newEvidenceFiles.length > 0) {
+    if (evidenceInputRef.current) {
       const dataTransfer = new DataTransfer();
       newEvidenceFiles.forEach((file) => dataTransfer.items.add(file));
       evidenceInputRef.current.files = dataTransfer.files;
@@ -619,7 +620,7 @@ export default function RegistroForm({
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col">
       <form
-        onSubmit={onFormSubmit}
+        action={formAction}
         className="min-h-0 flex-1 overflow-y-auto pb-24 pt-1"
       >
         {recordId ? <input type="hidden" name="recordId" value={recordId} /> : null}
@@ -802,17 +803,17 @@ export default function RegistroForm({
             </Link>
             <button
               type="submit"
-              disabled={
-                pending ||
-                isSubmitting ||
-                !!clientError ||
-                effectiveRouteId === null ||
-                effectiveEstablishmentId === null ||
-                effectiveProductId === null
-              }
+              disabled={isRegistroSubmitDisabled({
+                pending,
+                hasClientError: !!clientError,
+                routeId: effectiveRouteId,
+                establishmentId: effectiveEstablishmentId,
+                productId: effectiveProductId,
+                totalEvidenceCount,
+              })}
               className="flex h-11 w-full items-center justify-center rounded-[12px] border-0 bg-[#0D3233] text-[16px] leading-none font-normal text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {pending || isSubmitting ? "Guardando..." : submitLabel}
+              {pending ? "Guardando..." : submitLabel}
             </button>
           </div>
         </div>

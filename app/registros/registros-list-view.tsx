@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getScrollableListClassName, getScrollableListObserverOptions } from "@/app/_components/scrollable-list-state.mjs";
 import type { RegistroListItem } from "./types";
 
 type RegistrosResponse = {
@@ -89,7 +90,7 @@ export default function RegistrosListView({
           void loadMore();
         }
       },
-      { root: container, rootMargin: "180px 0px" },
+      getScrollableListObserverOptions(container),
     );
 
     observer.observe(node);
@@ -98,7 +99,7 @@ export default function RegistrosListView({
 
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col">
-      <section ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto pb-20 pt-1">
+      <section ref={scrollRef} className={getScrollableListClassName({ topPadding: true })}>
         <div className="flex w-full flex-col gap-3">
           <Link
             href="/registros/nuevo?source=registros"

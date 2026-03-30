@@ -280,10 +280,17 @@ async function uploadEvidenceRows(params: {
       });
 
     if (uploadError) {
+      console.error("Failed to upload evidence to storage", {
+        recordId,
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        message: uploadError.message,
+      });
       if (uploadedPaths.length > 0) {
         await auth.supabase.storage.from(EVIDENCE_BUCKET).remove(uploadedPaths);
       }
-      return { error: "No se pudieron subir las evidencias." };
+      return { error: `No se pudieron subir las evidencias. ${uploadError.message}` };
     }
 
     uploadedPaths.push(objectPath);
@@ -299,8 +306,13 @@ async function uploadEvidenceRows(params: {
 
   const { error: insertError } = await auth.supabase.from("evidence").insert(rows);
   if (insertError) {
+    console.error("Failed to insert evidence rows", {
+      recordId,
+      uploadedPaths,
+      message: insertError.message,
+    });
     await auth.supabase.storage.from(EVIDENCE_BUCKET).remove(uploadedPaths);
-    return { error: "No se pudieron asociar las evidencias al registro." };
+    return { error: `No se pudieron asociar las evidencias al registro. ${insertError.message}` };
   }
 
   return { error: null };
@@ -423,7 +435,6 @@ export async function createRegistroAction(
   const systemInventory = parseOptionalNonNegativeNumber(formData.get("systemInventory"));
   const realInventory = parseOptionalNonNegativeNumber(formData.get("realInventory"));
   const comments = String(formData.get("comments") ?? "").trim();
-  const manualEvidenceCount = parseOptionalNonNegativeNumber(formData.get("manualEvidenceCount"));
   const evidencePayload = parseEvidencePayload(formData);
 
   if (!Number.isFinite(routeId) || !Number.isFinite(establishmentId) || !Number.isFinite(productId)) {
@@ -438,19 +449,14 @@ export async function createRegistroAction(
     return { ...INITIAL_REGISTRO_STATE, error: "El inventario real no es válido." };
   }
 
-  const isManualMode = manualEvidenceCount !== null && manualEvidenceCount > 0;
-
-  if (!isManualMode && evidencePayload === null) {
+  if (evidencePayload === null) {
     return {
       ...INITIAL_REGISTRO_STATE,
       error: "Error en las evidencias o geolocalización.",
     };
   }
 
-  // Count files: if manual, we trust the param, otherwise we take the payload count
-  const finalEvidenceCount = isManualMode 
-     ? manualEvidenceCount 
-     : evidencePayload!.files.length;
+  const finalEvidenceCount = evidencePayload.files.length;
 
   if (finalEvidenceCount < 1 || finalEvidenceCount > MAX_EVIDENCE_PER_RECORD) {
     return {
@@ -499,8 +505,7 @@ export async function createRegistroAction(
     return { ...INITIAL_REGISTRO_STATE, error: "No se pudo crear el registro." };
   }
 
-  // Only upload here if NOT manual mode
-  if (!isManualMode && evidencePayload && evidencePayload.files.length > 0) {
+  if (evidencePayload.files.length > 0) {
     const uploadResult = await uploadEvidenceRows({
         auth,
         recordId: insertedRecord.record_id,
@@ -537,7 +542,6 @@ export async function updateRegistroAction(
   const systemInventory = parseOptionalNonNegativeNumber(formData.get("systemInventory"));
   const realInventory = parseOptionalNonNegativeNumber(formData.get("realInventory"));
   const comments = String(formData.get("comments") ?? "").trim();
-  const manualEvidenceCount = parseOptionalNonNegativeNumber(formData.get("manualEvidenceCount"));
   const evidencePayload = parseEvidencePayload(formData);
 
   if (!Number.isFinite(recordId)) {
@@ -552,9 +556,7 @@ export async function updateRegistroAction(
     return { ...INITIAL_REGISTRO_STATE, error: "El inventario real no es válido." };
   }
 
-  const isManualMode = manualEvidenceCount !== null && manualEvidenceCount >= 0;
-
-  if (!isManualMode && evidencePayload === null) {
+  if (evidencePayload === null) {
     return {
       ...INITIAL_REGISTRO_STATE,
       error: "Error en las evidencias o geolocalización.",
@@ -623,14 +625,10 @@ export async function updateRegistroAction(
 
   const evidenceRows = (existingEvidenceRows ?? []) as ExistingEvidenceRow[];
   
-  const removableIds = evidencePayload 
-    ? evidencePayload.removeEvidenceIds.filter((id) =>
-        evidenceRows.some((row) => row.evidence_id === id))
-    : parseRemoveEvidenceIds(String(formData.get("removeEvidenceIdsJson") ?? "[]"));
+  const removableIds = evidencePayload.removeEvidenceIds.filter((id) =>
+    evidenceRows.some((row) => row.evidence_id === id));
 
-  const newFilesCount = isManualMode 
-      ? manualEvidenceCount! // if isManualMode, manualEvidenceCount is checked >= 0
-      : evidencePayload!.files.length;
+  const newFilesCount = evidencePayload.files.length;
 
   if (newFilesCount > MAX_EVIDENCE_PER_RECORD) {
     return {
@@ -671,8 +669,7 @@ export async function updateRegistroAction(
   // Handle deletions first
   await deleteEvidenceRows(auth, recordId, removableIds, evidenceRows);
 
-  // Upload new files if NOT manual mode
-  if (!isManualMode && evidencePayload && evidencePayload.files.length > 0) {
+  if (evidencePayload.files.length > 0) {
     const uploadResult = await uploadEvidenceRows({
         auth,
         recordId,

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getScrollableListClassName, getScrollableListObserverOptions } from "@/app/_components/scrollable-list-state.mjs";
 import { completeTaskAction } from "./actions";
 import type { MisTarea, TaskStatus } from "./types";
 
@@ -219,7 +220,7 @@ export default function MisTareasView({
           void loadMore(activeTab);
         }
       },
-      { root: container, rootMargin: "180px 0px" },
+      getScrollableListObserverOptions(container),
     );
 
     observer.observe(node);
@@ -230,7 +231,7 @@ export default function MisTareasView({
 
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col">
-        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto pb-20">
+      <div ref={scrollRef} className={getScrollableListClassName()}>
         <div className="flex h-10 w-full gap-1 rounded-[12px] border border-[#B3B5B3] bg-[#E9EDE9] p-1">
           <button
             type="button"
@@ -304,7 +305,6 @@ export default function MisTareasView({
           ) : null}
         </section>
       </div>
-
       <div className="fixed inset-x-0 bottom-0 z-10 w-full bg-[#E9EDE9] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-2">
         <Link
           href="/home"
