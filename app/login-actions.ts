@@ -24,6 +24,11 @@ export async function loginAction(
   const { supabaseUrl, supabaseAnonKey } = getSupabaseServerEnv();
 
   if (!supabaseUrl || !supabaseAnonKey) {
+    console.error("[loginAction] Missing Supabase env vars", {
+      hasSupabaseUrl: Boolean(supabaseUrl),
+      hasSupabaseAnonKey: Boolean(supabaseAnonKey),
+    });
+
     return buildLoginActionState({
       prevState,
       error: "Error de configuracion de autenticacion. Revisa variables de entorno.",
@@ -56,6 +61,14 @@ export async function loginAction(
   });
 
   if (error) {
+    console.error("[loginAction] signInWithPassword failed", {
+      email,
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      name: error.name,
+    });
+
     return buildLoginActionState({
       prevState,
       error: "No fue posible iniciar sesion con esas credenciales.",
@@ -66,9 +79,24 @@ export async function loginAction(
 
   const {
     data: { user },
+    error: getUserError,
   } = await supabase.auth.getUser();
 
+  if (getUserError) {
+    console.error("[loginAction] getUser failed after login", {
+      email,
+      message: getUserError.message,
+      code: getUserError.code,
+      status: getUserError.status,
+      name: getUserError.name,
+    });
+  }
+
   if (!user) {
+    console.error("[loginAction] user missing after successful signInWithPassword", {
+      email,
+    });
+
     return buildLoginActionState({
       prevState,
       error: "No fue posible validar la sesion del usuario.",
@@ -76,13 +104,30 @@ export async function loginAction(
     });
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("user_profile")
     .select("role")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
+  if (profileError) {
+    console.error("[loginAction] user_profile query failed", {
+      email,
+      authUserId: user.id,
+      message: profileError.message,
+      code: profileError.code,
+      details: profileError.details,
+      hint: profileError.hint,
+    });
+  }
+
   if (!isAllowedAppRole(profile?.role)) {
+    console.warn("[loginAction] denied by app role policy", {
+      email,
+      authUserId: user.id,
+      role: profile?.role ?? null,
+    });
+
     await supabase.auth.signOut();
     return buildLoginActionState({
       prevState,
