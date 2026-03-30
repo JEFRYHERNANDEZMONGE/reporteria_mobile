@@ -5,6 +5,7 @@ import { logoutAction } from "@/app/home/actions";
 import { isAllowedAppRole } from "@/lib/auth/roles";
 import { DEFAULT_PAGE_SIZE } from "@/lib/pagination";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getRouteScrollableContentClassName } from "@/app/mis-rutas/route-scroll-layout.mjs";
 import { getZonaItemsPage } from "../zona-data";
 import ZonaListView from "../zona-list-view";
 
@@ -102,7 +103,7 @@ export default async function CompletadasZonaPage({
       displayName={getDisplayName(user)}
       profilePhotoUrl={profilePhotoUrl}
       onLogout={logoutAction}
-      contentClassName="relative flex min-h-0 flex-1 w-full pt-4"
+      contentClassName={getRouteScrollableContentClassName()}
     >
       <ZonaListView
         routeId={routeIdNumber}
