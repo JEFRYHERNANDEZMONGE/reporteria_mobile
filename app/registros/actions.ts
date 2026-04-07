@@ -613,7 +613,7 @@ export async function updateRegistroAction(
     return { ...INITIAL_REGISTRO_STATE, error: "No se encontro el registro." };
   }
 
-  if (auth.role === "rutero" && recordRow.user_id !== auth.profileUserId) {
+  if (recordRow.user_id !== auth.profileUserId) {
     return { ...INITIAL_REGISTRO_STATE, error: "No tienes acceso a este registro." };
   }
 

@@ -128,7 +128,7 @@ export default async function RegistroEditarPage({
     redirect("/registros");
   }
 
-  if (profile.role === "rutero" && record.user_id !== profile.user_id) {
+  if (record.user_id !== profile.user_id) {
     redirect("/registros");
   }
 
