@@ -1,5 +1,75 @@
 export type RouteLapsoStatus = "en_curso" | "completado" | "incompleto" | "vencido";
 
+export type ResolvedLapso = {
+  lapsoId: number;
+  lapsoUserId: number;
+};
+
+/**
+ * Finds the active lapso for a route.
+ * For admin/editor: first tries the assigned user, then falls back to any active lapso
+ * for the route (same logic used when creating records).
+ * For rutero: only returns the lapso belonging to that user.
+ */
+export async function resolveActiveLapso(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  params: {
+    routeId: number;
+    assignedUser: number | null;
+    profileUserId: number;
+    role: string;
+  },
+): Promise<ResolvedLapso | null> {
+  const { routeId, assignedUser, profileUserId, role } = params;
+
+  if (role === "rutero") {
+    const { data } = await supabase
+      .from("route_lapso")
+      .select("lapso_id, user_id")
+      .eq("route_id", routeId)
+      .eq("user_id", profileUserId)
+      .eq("status", "en_curso")
+      .order("start_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!data) return null;
+    return { lapsoId: data.lapso_id, lapsoUserId: data.user_id };
+  }
+
+  // admin / editor: try assigned user first, then any active lapso for the route
+  const candidateUserId = assignedUser ?? null;
+
+  let query = supabase
+    .from("route_lapso")
+    .select("lapso_id, user_id")
+    .eq("route_id", routeId)
+    .eq("status", "en_curso")
+    .order("start_at", { ascending: false })
+    .limit(1);
+
+  if (typeof candidateUserId === "number") {
+    query = query.eq("user_id", candidateUserId);
+  }
+
+  let { data } = await query.maybeSingle();
+
+  if (!data && typeof candidateUserId === "number") {
+    // fallback: any active lapso for the route (admin created it under a different user)
+    const { data: fallback } = await supabase
+      .from("route_lapso")
+      .select("lapso_id, user_id")
+      .eq("route_id", routeId)
+      .eq("status", "en_curso")
+      .order("start_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    data = fallback ?? null;
+  }
+
+  if (!data) return null;
+  return { lapsoId: data.lapso_id, lapsoUserId: data.user_id };
+}
+
 export function getDurationDaysFromVisitPeriod(visitPeriod: string | null | undefined) {
   if (!visitPeriod) return 7;
 

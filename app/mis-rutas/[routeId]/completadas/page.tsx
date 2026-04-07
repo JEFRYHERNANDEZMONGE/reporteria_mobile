@@ -6,6 +6,7 @@ import { isAllowedAppRole } from "@/lib/auth/roles";
 import { DEFAULT_PAGE_SIZE } from "@/lib/pagination";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getRouteScrollableContentClassName } from "@/app/mis-rutas/route-scroll-layout.mjs";
+import { resolveActiveLapso } from "@/lib/route-lapsos";
 import { getZonaItemsPage } from "../zona-data";
 import ZonaListView from "../zona-list-view";
 
@@ -75,23 +76,18 @@ export default async function CompletadasZonaPage({
     redirect("/mis-rutas");
   }
 
-  const lapsoUserId = routeRow.assigned_user ?? profile.user_id;
-
-  const { data: lapso } = await supabase
-    .from("route_lapso")
-    .select("lapso_id")
-    .eq("route_id", routeIdNumber)
-    .eq("user_id", lapsoUserId)
-    .eq("status", "en_curso")
-    .order("start_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const lapso = await resolveActiveLapso(supabase, {
+    routeId: routeIdNumber,
+    assignedUser: routeRow.assigned_user ?? null,
+    profileUserId: profile.user_id,
+    role: profile.role,
+  });
 
   const { items: initialItems, hasMore: initialHasMore } = await getZonaItemsPage({
     supabase,
     routeId: routeIdNumber,
-    lapsoUserId,
-    lapsoId: lapso?.lapso_id ?? null,
+    lapsoUserId: lapso?.lapsoUserId ?? (routeRow.assigned_user ?? profile.user_id),
+    lapsoId: lapso?.lapsoId ?? null,
     source: "completadas",
     offset: 0,
     limit: DEFAULT_PAGE_SIZE,

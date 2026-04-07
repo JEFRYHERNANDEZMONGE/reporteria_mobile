@@ -3,6 +3,7 @@ import { isAllowedAppRole } from "@/lib/auth/roles";
 import { sanitizeListSearchQuery } from "@/lib/list-search.mjs";
 import { parsePaginationParams } from "@/lib/pagination";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveActiveLapso } from "@/lib/route-lapsos";
 import { getZonaItemsPage } from "@/app/mis-rutas/[routeId]/zona-data";
 
 export async function GET(
@@ -48,17 +49,12 @@ export async function GET(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const lapsoUserId = routeRow.assigned_user ?? profile.user_id;
-
-  const { data: lapso } = await supabase
-    .from("route_lapso")
-    .select("lapso_id")
-    .eq("route_id", routeIdNumber)
-    .eq("user_id", lapsoUserId)
-    .eq("status", "en_curso")
-    .order("start_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const lapso = await resolveActiveLapso(supabase, {
+    routeId: routeIdNumber,
+    assignedUser: routeRow.assigned_user ?? null,
+    profileUserId: profile.user_id,
+    role: profile.role,
+  });
 
   const url = new URL(request.url);
   const { offset, limit } = parsePaginationParams(url.searchParams);
@@ -67,8 +63,8 @@ export async function GET(
   const page = await getZonaItemsPage({
     supabase,
     routeId: routeIdNumber,
-    lapsoUserId,
-    lapsoId: lapso?.lapso_id ?? null,
+    lapsoUserId: lapso?.lapsoUserId ?? (routeRow.assigned_user ?? profile.user_id),
+    lapsoId: lapso?.lapsoId ?? null,
     source: "pendientes",
     offset,
     limit,
