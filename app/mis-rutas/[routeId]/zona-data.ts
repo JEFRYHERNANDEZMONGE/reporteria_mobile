@@ -152,7 +152,7 @@ async function buildSummariesForBatch({
       id: establishment.establishment_id,
       name: establishment.name,
       meta: latestRecord
-        ? formatRecordMeta(latestRecord.timeDate, latestRecord.status)
+        ? formatRecordMeta(latestRecord.timeDate)
         : "Completada",
     });
   }
