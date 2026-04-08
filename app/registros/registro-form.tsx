@@ -705,6 +705,7 @@ export default function RegistroForm({
       >
         {recordId ? <input type="hidden" name="recordId" value={recordId} /> : null}
         <input type="hidden" name="source" value={source} />
+        <input type="hidden" name="backHref" value={backHref} />
         <input type="hidden" name="routeId" value={effectiveRouteId ?? ""} />
         <input type="hidden" name="establishmentId" value={effectiveEstablishmentId ?? ""} />
         <input type="hidden" name="productId" value={effectiveProductId ?? ""} />

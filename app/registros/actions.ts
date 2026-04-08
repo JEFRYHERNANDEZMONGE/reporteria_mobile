@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { isAllowedAppRole, type AllowedAppRole } from "@/lib/auth/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -560,11 +561,16 @@ export async function createRegistroAction(
   revalidateRegistroRelatedPaths(routeId, establishmentId);
   revalidatePath(`/registros/${insertedRecord.record_id}/editar`);
 
-  return {
-    error: null,
-    success: true,
-    recordId: insertedRecord.record_id,
-  };
+  const backHref = String(formData.get("backHref") ?? "").trim() || "/registros";
+  const source = String(formData.get("source") ?? "").trim();
+  const params = new URLSearchParams({
+    recordId: String(insertedRecord.record_id),
+    backHref,
+    source,
+    routeId: String(routeId),
+    establishmentId: String(establishmentId),
+  });
+  redirect(`/registros/exito?${params.toString()}`);
 }
 
 
