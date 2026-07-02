@@ -50,12 +50,12 @@ function parseIntegerField(formData: FormData, fieldName: string) {
   return Number(String(formData.get(fieldName) ?? "").trim());
 }
 
-function parseOptionalNonNegativeNumber(value: FormDataEntryValue | null) {
+function parseOptionalFiniteNumber(value: FormDataEntryValue | null) {
   const text = String(value ?? "").trim();
   if (!text) return null;
 
   const parsed = Number(text);
-  if (!Number.isFinite(parsed) || parsed < 0) {
+  if (!Number.isFinite(parsed)) {
     return Number.NaN;
   }
 
@@ -475,8 +475,8 @@ export async function createRegistroAction(
   const routeId = parseIntegerField(formData, "routeId");
   const establishmentId = parseIntegerField(formData, "establishmentId");
   const productId = parseIntegerField(formData, "productId");
-  const systemInventory = parseOptionalNonNegativeNumber(formData.get("systemInventory"));
-  const realInventory = parseOptionalNonNegativeNumber(formData.get("realInventory"));
+  const systemInventory = parseOptionalFiniteNumber(formData.get("systemInventory"));
+  const realInventory = parseOptionalFiniteNumber(formData.get("realInventory"));
   const comments = String(formData.get("comments") ?? "").trim();
   const evidencePayload = parseEvidencePayload(formData);
   const manualEvidenceCount = parseManualEvidenceCount(formData);
@@ -621,8 +621,8 @@ export async function updateRegistroAction(
   formData: FormData,
 ): Promise<RegistroActionState> {
   const recordId = parseIntegerField(formData, "recordId");
-  const systemInventory = parseOptionalNonNegativeNumber(formData.get("systemInventory"));
-  const realInventory = parseOptionalNonNegativeNumber(formData.get("realInventory"));
+  const systemInventory = parseOptionalFiniteNumber(formData.get("systemInventory"));
+  const realInventory = parseOptionalFiniteNumber(formData.get("realInventory"));
   const comments = String(formData.get("comments") ?? "").trim();
   const evidencePayload = parseEvidencePayload(formData);
   const manualEvidenceCount = parseManualEvidenceCount(formData);

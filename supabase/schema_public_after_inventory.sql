@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS "public"."check_record" (
     "product_id" bigint NOT NULL,
     "user_id" bigint NOT NULL,
     "establishment_id" bigint NOT NULL,
-    CONSTRAINT "check_record_non_negative_inv" CHECK (((("system_inventory" IS NULL) OR ("system_inventory" >= 0)) AND (("real_inventory" IS NULL) OR ("real_inventory" >= 0)) AND (("evidence_num" IS NULL) OR ("evidence_num" >= 0))))
+    CONSTRAINT "check_record_non_negative_inv" CHECK (((("evidence_num" IS NULL) OR ("evidence_num" >= 0))))
 );
 
 
@@ -632,7 +632,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
-
 
 
 

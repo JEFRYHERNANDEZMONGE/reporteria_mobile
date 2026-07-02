@@ -675,7 +675,6 @@ export default function RegistroForm({
             <input
               type="number"
               name="systemInventory"
-              min={0}
               defaultValue={initialSystemInventory ?? undefined}
               className="h-11 w-full rounded-[12px] border border-[#B3B5B3] bg-white px-3 text-[18px] text-[#0D3233] outline-none"
             />
@@ -688,7 +687,6 @@ export default function RegistroForm({
             <input
               type="number"
               name="realInventory"
-              min={0}
               defaultValue={initialRealInventory ?? undefined}
               className="h-11 w-full rounded-[12px] border border-[#B3B5B3] bg-white px-3 text-[18px] text-[#0D3233] outline-none"
             />
