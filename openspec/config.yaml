@@ -1,0 +1,70 @@
+schema: spec-driven
+
+project: reporteria_mobile
+
+context: |
+  Tech stack: Next.js 16.1.6 App Router, React 19.2.3, TypeScript 5, Tailwind CSS 4, Supabase SSR/Auth/Postgres.
+  Architecture: app/ route segments with Server Components, Server Actions, Route Handlers, proxy.ts auth/session guard, lib/ shared domain and Supabase helpers, supabase/migrations SQL history.
+  Testing: Node built-in test runner via *.test.mjs files; no package test script; lint via npm run lint; build via npm run build.
+  Style: strict TypeScript, eslint-config-next core-web-vitals/typescript, npm/package-lock workflow.
+
+testing:
+  strict_tdd: true
+  detected: 2026-07-02
+  runner:
+    framework: node:test
+    command: node --test
+    package_script: null
+  layers:
+    unit:
+      available: true
+      tool: node:test
+    integration:
+      available: true
+      tool: node:test with source-level server action and Supabase query fakes
+    e2e:
+      available: false
+      tool: null
+  coverage:
+    available: false
+    command: null
+  quality:
+    linter:
+      available: true
+      command: npm run lint
+    type_checker:
+      available: true
+      command: npm run build
+    formatter:
+      available: false
+      command: null
+  last_verified:
+    lint: "npm run lint -> passed with 1 warning in app/registros/registro-form.tsx @next/next/no-img-element"
+    tests: "node --test -> 80 passed"
+    build: "npm run build -> passed"
+
+rules:
+  proposal:
+    - Keep scope narrow and name affected domain/capability explicitly.
+    - Include rollback plan for risky database or auth changes.
+  specs:
+    - Use Given/When/Then acceptance scenarios.
+    - Use RFC 2119 keywords for behavioral requirements.
+  design:
+    - Prefer existing app/, lib/, and supabase/migrations patterns before introducing new structure.
+    - Document database constraints, RLS impact, and time-zone assumptions for Supabase changes.
+  tasks:
+    - Keep work units small enough for the 400-line review budget.
+  apply:
+    tdd: true
+    test_command: node --test
+    rules:
+      - Add or update focused node:test coverage before implementation when feasible.
+      - Preserve Next.js App Router and Server Action conventions.
+  verify:
+    test_command: node --test
+    build_command: npm run build
+    lint_command: npm run lint
+    coverage_threshold: 0
+  archive:
+    - Record concise evidence, unresolved follow-ups, and artifact paths.

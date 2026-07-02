@@ -16,3 +16,13 @@ test("partial duplicate does not resume uploads from a later image index", () =>
   assert.match(source, /for\s*\(\s*let\s+i\s*=\s*0/);
   assert.match(source, /Subiendo imagen \$\{i \+ 1\} de \$\{totalFiles\}/);
 });
+
+test("system inventory input no longer sets a non-negative browser minimum", () => {
+  assert.match(source, /name="systemInventory"/);
+  assert.doesNotMatch(source, /name="systemInventory"[\s\S]*?min=\{0\}/);
+});
+
+test("real inventory input no longer sets a non-negative browser minimum", () => {
+  assert.match(source, /name="realInventory"/);
+  assert.doesNotMatch(source, /name="realInventory"[\s\S]*?min=\{0\}/);
+});
