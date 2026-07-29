@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
 import CollapsibleListSearch from "@/app/_components/collapsible-list-search";
@@ -15,6 +16,7 @@ export type ProductRecordItem = {
   productId: number;
   productName: string;
   productSku: string;
+  photoUrl: string | null;
   existingRecordId: number | null;
   lastUpdateLabel: string | null;
   systemInventory: number | null;
@@ -66,22 +68,41 @@ function ProductRecordCard({
 
   return (
     <article className="rounded-[12px] border border-[#B3B5B3] bg-white p-3">
-      <p className="m-0 text-[16px] leading-none font-normal text-[#0D3233]">
-        {item.productName}
-      </p>
-      <p className="mt-1 text-[14px] leading-none font-normal text-[#5A7984]">
-        SKU: {item.productSku}
-      </p>
-      <p className="mt-1 text-[14px] leading-none font-normal text-[#405C62]">
-        {metadataText}
-      </p>
+      <div className="flex gap-3">
+        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[8px] bg-[#E9EDE9]">
+          {item.photoUrl ? (
+            <Image
+              src={item.photoUrl}
+              alt={item.productName}
+              fill
+              sizes="56px"
+              className="object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-[10px] text-[#8A9BA7]">
+              Sin foto
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="m-0 text-[16px] leading-none font-normal text-[#0D3233]">
+            {item.productName}
+          </p>
+          <p className="mt-1 text-[14px] leading-none font-normal text-[#5A7984]">
+            SKU: {item.productSku}
+          </p>
+          <p className="mt-1 text-[14px] leading-none font-normal text-[#405C62]">
+            {metadataText}
+          </p>
 
-      {source === "completadas" ? (
-        <p className="mt-1 text-[14px] leading-none font-normal text-[#5A7984]">
-          Inventario sistema: {item.systemInventory ?? "-"} | Inventario real:{" "}
-          {item.realInventory ?? "-"}
-        </p>
-      ) : null}
+          {source === "completadas" ? (
+            <p className="mt-1 text-[14px] leading-none font-normal text-[#5A7984]">
+              Inventario sistema: {item.systemInventory ?? "-"} | Inventario real:{" "}
+              {item.realInventory ?? "-"}
+            </p>
+          ) : null}
+        </div>
+      </div>
 
       <div className="mt-3 flex flex-col gap-2">
         <Link
