@@ -4,6 +4,7 @@ export type ProductRecordItem = {
   productId: number;
   productName: string;
   productSku: string;
+  photoUrl: string | null;
   existingRecordId: number | null;
   lastUpdateLabel: string | null;
   systemInventory: number | null;
