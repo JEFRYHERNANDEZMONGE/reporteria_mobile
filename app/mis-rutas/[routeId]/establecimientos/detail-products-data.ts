@@ -1,22 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildSqlContainsPattern, sanitizeListSearchQuery } from "@/lib/list-search.mjs";
+import { formatRecordDateLabel } from "@/lib/record-date-label.mjs";
 import type { DetailSource, ProductRecordItem } from "./detail-types";
 
 const PRODUCT_SCAN_BATCH = 60;
 
 function formatLastUpdateLabel(timeDate: string) {
-  const parsed = new Date(timeDate);
-  if (Number.isNaN(parsed.getTime())) {
-    return "Sin fecha";
-  }
-
-  return parsed.toLocaleString("es-MX", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Costa_Rica",
-  });
+  return formatRecordDateLabel(timeDate);
 }
 
 type CheckRecordRow = {

@@ -1,23 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildSqlContainsPattern, sanitizeListSearchQuery } from "@/lib/list-search.mjs";
 import { getLapsoPendingEstablishmentIds } from "@/lib/route-lapsos.mjs";
+import { formatRecordDateLabel } from "@/lib/record-date-label.mjs";
 import type { ZonaListItem, ZonaSource } from "./zona-types";
 
 const ESTABLISHMENT_SCAN_BATCH = 60;
 
 function formatRecordMeta(timeDate: string) {
-  const date = new Date(timeDate);
-  const dateLabel = Number.isNaN(date.getTime())
-    ? "Sin fecha"
-    : date.toLocaleString("es-MX", {
-        day: "2-digit",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "America/Costa_Rica",
-      });
-
-  return `Completada | ${dateLabel}`;
+  return `Completada | ${formatRecordDateLabel(timeDate)}`;
 }
 
 type EstablishmentRow = {

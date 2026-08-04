@@ -8,6 +8,7 @@ import {
   getScrollableListObserverOptions,
 } from "@/app/_components/scrollable-list-state.mjs";
 import { sanitizeListSearchQuery } from "@/lib/list-search.mjs";
+import { formatRecordDateLabel } from "@/lib/record-date-label.mjs";
 import type { RegistroListItem } from "./types";
 
 type RegistrosResponse = {
@@ -22,17 +23,7 @@ type RegistrosListViewProps = {
 };
 
 function formatDateLabel(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "Sin fecha";
-  }
-  return date.toLocaleString("es-MX", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Costa_Rica",
-  });
+  return formatRecordDateLabel(value);
 }
 
 export default function RegistrosListView({
