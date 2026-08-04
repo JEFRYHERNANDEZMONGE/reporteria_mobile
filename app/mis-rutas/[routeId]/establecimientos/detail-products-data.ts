@@ -111,7 +111,7 @@ export async function getEstablishmentProductsPage({
   while (collected.length < limit + 1 && !reachedEnd) {
     let productQuery = supabase
       .from("product")
-      .select("product_id, name, sku")
+      .select("product_id, name, sku, photo_url")
       .in("product_id", productIds)
       .eq("is_active", true)
       .order("name", { ascending: true })
@@ -172,6 +172,7 @@ export async function getEstablishmentProductsPage({
         productId: product.product_id,
         productName: product.name,
         productSku: product.sku,
+        photoUrl: product.photo_url ?? null,
         existingRecordId: existingRecord?.record_id ?? null,
         lastUpdateLabel: existingRecord ? formatLastUpdateLabel(existingRecord.time_date) : null,
         systemInventory: existingRecord?.system_inventory ?? null,

@@ -14,6 +14,7 @@ type ProductRow = {
   product_id: number;
   name: string;
   sku: string;
+  photo_url: string | null;
 };
 
 type CheckRecordRow = {
@@ -89,7 +90,7 @@ export async function getEstablishmentDetailData({
   if (productIds.length > 0) {
     const { data, error: productsError } = await supabase
       .from("product")
-      .select("product_id, name, sku")
+      .select("product_id, name, sku, photo_url")
       .in("product_id", productIds)
       .eq("is_active", true)
       .order("name", { ascending: true });
@@ -133,6 +134,7 @@ export async function getEstablishmentDetailData({
       productId: product.product_id,
       productName: product.name,
       productSku: product.sku,
+      photoUrl: product.photo_url ?? null,
       existingRecordId: existingRecord?.record_id ?? null,
       lastUpdateLabel: existingRecord ? formatLastUpdateLabel(existingRecord.time_date) : null,
       systemInventory: existingRecord?.system_inventory ?? null,
